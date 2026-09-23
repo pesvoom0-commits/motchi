@@ -3,3 +3,85 @@ body{margin:0;min-height:100svh;padding:22px;background:#f4f0e8;color:#272624;fo
 /* 二重描画が起きた場合も、アプリ本体のカードは1枚だけ表示する */
 body > main.shell ~ main.shell{display:none!important}
 main.shell > .card ~ .card{display:none!important}
+
+
+/* v7: mobile interaction / scrolling layout */
+html{
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+  overscroll-behavior-y:none;
+}
+body{
+  box-sizing:border-box;
+  min-height:100dvh;
+  padding-bottom:calc(170px + env(safe-area-inset-bottom));
+  overflow-x:hidden;
+}
+*,*::before,*::after{box-sizing:border-box}
+
+/* Header stays at the top of the document; it does not follow while reading. */
+.app-header{
+  position:static!important;
+  top:auto!important;
+  z-index:auto!important;
+}
+
+/* The conversation belongs to the page itself, not an inner scrolling pane. */
+.chat{
+  max-height:none!important;
+  min-height:250px;
+  overflow:visible!important;
+  overscroll-behavior:auto;
+  padding-bottom:18px;
+}
+
+/* Prevent iPhone/Safari focus zoom. */
+textarea,
+.login-box input[type=password]{
+  font-size:16px!important;
+}
+
+/* Composer is always visible at the bottom of the viewport. */
+.composer{
+  position:fixed;
+  z-index:30;
+  left:50%;
+  bottom:0;
+  transform:translateX(-50%);
+  width:min(calc(100% - 44px),520px);
+  margin:0;
+  padding:16px 22px calc(16px + env(safe-area-inset-bottom));
+  background:#fffdf8;
+  border:1px solid #e6dfd4;
+  border-bottom:0;
+  border-radius:22px 22px 0 0;
+  box-shadow:0 -14px 35px rgba(45,39,31,.08);
+}
+
+.composer textarea{
+  display:block;
+  resize:none;
+}
+
+/* Keep content clear of the fixed composer on small screens. */
+.card{
+  padding-bottom:34px;
+}
+
+@media (max-width:560px){
+  body{
+    padding:12px 12px calc(170px + env(safe-area-inset-bottom));
+  }
+  .shell{width:100%}
+  .card{
+    border-radius:24px;
+    padding:24px 18px 34px;
+  }
+  .composer{
+    width:100%;
+    padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+    border-left:0;
+    border-right:0;
+    border-radius:18px 18px 0 0;
+  }
+}
