@@ -100,12 +100,9 @@
   function restoreHistory(){
     if(!chat)return;
 
-    if(history.length===0){
-      // index.html にある最初の吹き出しをそのまま使う
-      return;
-    }
-
     chat.innerHTML='';
+    drawMessage('ai','美砂さん、なんでも聞いてください。');
+
     history.forEach(item=>drawMessage(item.kind,item.text));
   }
 
