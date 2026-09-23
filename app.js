@@ -113,6 +113,24 @@
     }
   }
 
+  function buildConversationContext(){
+    const ignoreAi=/^(エラー:|考えちゅう…|返事を受け取り中…|前の返事を取りにいってます…|通信が不安定です)/;
+
+    return history
+      .filter(item =>
+        item &&
+        (item.kind==='user'||item.kind==='ai') &&
+        typeof item.text==='string' &&
+        item.text.trim() &&
+        !(item.kind==='ai' && ignoreAi.test(item.text.trim()))
+      )
+      .slice(-8)
+      .map(item=>({
+        role:item.kind==='user' ? 'user' : 'assistant',
+        text:item.text.slice(0,4000)
+      }));
+  }
+
   function restoreHistory(){
     if(!chat)return;
 
@@ -336,6 +354,7 @@
       if(!text||!current||sendButton.disabled)return;
 
       const requestId=newRequestId();
+      const conversation=buildConversationContext();
 
       drawMessage('user',text);
       addHistory('user',text);
@@ -350,7 +369,8 @@
         const data=await api('/api/ask',{
           passphrase:current,
           question:text,
-          requestId
+          requestId,
+          conversation
         });
 
         if(Number.isFinite(data.remaining))setRemaining(data.remaining);
