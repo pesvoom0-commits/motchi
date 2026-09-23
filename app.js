@@ -150,12 +150,22 @@
     if(!Number.isFinite(value))return;
     remaining.textContent='今日はあと '+value+' 回';
     storageSet(REMAINING_KEY,String(value));
+
+    if(value<=0){
+      sendButton.disabled=true;
+      sendButton.textContent='今日はここまで';
+      sendButton.setAttribute('aria-busy','false');
+    }
+  }
+
+  function limitMessage(){
+    return '今日は20回使い切ったよ。また明日ね🐔';
   }
 
   function showCachedRemaining(){
     const cached=Number(storageGet(REMAINING_KEY));
     if(Number.isFinite(cached) && storageGet(REMAINING_KEY)!==''){
-      remaining.textContent='今日はあと '+cached+' 回';
+      setRemaining(cached);
     }
   }
 
@@ -393,12 +403,28 @@
           return;
         }
 
+        if(e.status===429){
+          const message=limitMessage();
+          pendingRow.querySelector('.bubble').textContent=message;
+          addHistory('ai',message);
+          clearPending();
+          setRemaining(0);
+          return;
+        }
+
         // 「Load failed」等の通信断でも、サーバー側で回答が完成している可能性がある。
         pendingRow.querySelector('.bubble').textContent='返事を受け取り中…';
         await recoverAnswer(requestId,pendingRow);
 
       }finally{
-        setButtonBusy(sendButton,false,'考え中…','送信する');
+        const cachedRemaining=Number(storageGet(REMAINING_KEY));
+        if(storageGet(REMAINING_KEY)!=='' && cachedRemaining<=0){
+          sendButton.disabled=true;
+          sendButton.textContent='今日はここまで';
+          sendButton.setAttribute('aria-busy','false');
+        }else{
+          setButtonBusy(sendButton,false,'考え中…','送信する');
+        }
         question.focus();
       }
     });
