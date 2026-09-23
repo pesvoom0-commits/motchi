@@ -3,7 +3,18 @@
 
   const PASS_KEY='motchi_ai_passphrase';
   const CHAT_KEY='motchi_ai_chat_v2';
+  const REMAINING_KEY='motchi_ai_remaining_v1';
+  const PENDING_KEY='motchi_ai_pending_v1';
   const MAX_HISTORY_MESSAGES=80;
+
+  // まれにブラウザ側で同じUIが二重化しても、表示するアプリ本体は1つだけにする。
+  const shells=[...document.querySelectorAll('main.shell')];
+  shells.slice(1).forEach(node=>node.remove());
+  const firstShell=shells[0]||document.querySelector('main.shell');
+  if(firstShell){
+    const cards=[...firstShell.querySelectorAll(':scope > .card')];
+    cards.slice(1).forEach(node=>node.remove());
+  }
 
   const cfg=window.MOTCHI_AI_CONFIG||{};
   const base=String(cfg.apiBase||'').replace(/\/$/,'');
@@ -20,6 +31,7 @@
 
   let current='';
   let history=loadHistory();
+  let recovering=false;
 
   function storageGet(key){
     try{return localStorage.getItem(key)||'';}catch(e){return '';}
@@ -31,6 +43,10 @@
 
   function storageRemove(key){
     try{localStorage.removeItem(key);}catch(e){}
+  }
+
+  function sleep(ms){
+    return new Promise(resolve=>setTimeout(resolve,ms));
   }
 
   function escapeHtml(text){
@@ -102,7 +118,6 @@
 
     chat.innerHTML='';
     drawMessage('ai','美砂さん、なんでも聞いてください。');
-
     history.forEach(item=>drawMessage(item.kind,item.text));
   }
 
@@ -113,25 +128,100 @@
     button.setAttribute('aria-busy',busy ? 'true' : 'false');
   }
 
+  function setRemaining(value){
+    if(!Number.isFinite(value))return;
+    remaining.textContent='今日はあと '+value+' 回';
+    storageSet(REMAINING_KEY,String(value));
+  }
+
+  function showCachedRemaining(){
+    const cached=Number(storageGet(REMAINING_KEY));
+    if(Number.isFinite(cached) && storageGet(REMAINING_KEY)!==''){
+      remaining.textContent='今日はあと '+cached+' 回';
+    }
+  }
+
+  function newRequestId(){
+    if(window.crypto && typeof window.crypto.randomUUID==='function'){
+      return window.crypto.randomUUID().replace(/-/g,'');
+    }
+    return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,12);
+  }
+
+  function savePending(item){
+    storageSet(PENDING_KEY,JSON.stringify(item));
+  }
+
+  function loadPending(){
+    try{
+      const raw=storageGet(PENDING_KEY);
+      if(!raw)return null;
+      const parsed=JSON.parse(raw);
+      if(!parsed || !parsed.requestId)return null;
+      return parsed;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function clearPending(){
+    storageRemove(PENDING_KEY);
+  }
+
   async function api(path,body){
     if(!base)throw new Error('まだAPI接続先が設定されていません。');
 
-    const response=await fetch(base+path,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(body)
-    });
+    let response;
+    try{
+      response=await fetch(base+path,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        cache:'no-store',
+        body:JSON.stringify(body)
+      });
+    }catch(networkError){
+      const err=new Error('通信が途中で切れました');
+      err.network=true;
+      throw err;
+    }
 
     let data={};
     try{data=await response.json();}catch(e){}
 
-    if(!response.ok){
+    if(!response.ok && response.status!==202){
       const err=new Error(data.error||'通信に失敗しました');
       err.status=response.status;
       throw err;
     }
 
+    data.httpStatus=response.status;
     return data;
+  }
+
+  function forceLogout(message){
+    current='';
+    storageRemove(PASS_KEY);
+    login.hidden=false;
+    loginError.textContent=message||'あいことばをもう一度入力してください。';
+  }
+
+  async function refreshUsage(candidate,attempt=0){
+    try{
+      const data=await api('/api/check',{passphrase:candidate});
+      if(Number.isFinite(data.remaining))setRemaining(data.remaining);
+      return true;
+    }catch(e){
+      if(e.status===401){
+        forceLogout('あいことばをもう一度入力してください。');
+        return false;
+      }
+
+      // 通信失敗だけではログアウトしない。少し後でもう一度だけ確認する。
+      if(attempt===0){
+        setTimeout(()=>refreshUsage(candidate,1),4000);
+      }
+      return false;
+    }
   }
 
   async function unlock(value){
@@ -149,20 +239,79 @@
       const data=await api('/api/check',{passphrase:candidate});
       current=candidate;
       storageSet(PASS_KEY,candidate);
-
-      if(Number.isFinite(data.remaining)){
-        remaining.textContent='今日はあと '+data.remaining+' 回';
-      }
-
+      if(Number.isFinite(data.remaining))setRemaining(data.remaining);
       login.hidden=true;
+      resumePendingIfNeeded();
     }catch(e){
       if(e.status===401){
         storageRemove(PASS_KEY);
+        loginError.textContent=e.message;
+      }else{
+        // 初回ログイン時だけは、認証できていないので画面を閉じない。
+        loginError.textContent='通信が不安定です。もう一度「ひらく」を押してみてください。';
       }
       login.hidden=false;
-      loginError.textContent=e.message;
     }finally{
       setButtonBusy(loginButton,false,'確認中…','ひらく');
+    }
+  }
+
+  async function recoverAnswer(requestId,pendingRow,maxAttempts=20){
+    if(recovering)return false;
+    recovering=true;
+
+    try{
+      for(let i=0;i<maxAttempts;i++){
+        if(i>0)await sleep(1500);
+
+        try{
+          const data=await api('/api/result',{
+            passphrase:current,
+            requestId
+          });
+
+          if(Number.isFinite(data.remaining))setRemaining(data.remaining);
+
+          if(data.state==='completed'){
+            const answer=data.answer||'返事が空っぽでした';
+            pendingRow.querySelector('.bubble').innerHTML=renderAiText(answer);
+            addHistory('ai',answer);
+            clearPending();
+            return true;
+          }
+
+          if(data.state==='unknown' && i>=3){
+            break;
+          }
+
+          pendingRow.querySelector('.bubble').textContent='返事を受け取り中…';
+        }catch(e){
+          if(e.status===401){
+            forceLogout();
+            return false;
+          }
+          // 一時的な通信断なら、そのまま再試行する。
+        }
+      }
+
+      pendingRow.querySelector('.bubble').textContent='通信が不安定です。少し時間をおいて、ページを開き直してください。返事が完成していれば自動で回収します。';
+      return false;
+    }finally{
+      recovering=false;
+    }
+  }
+
+  async function resumePendingIfNeeded(){
+    const item=loadPending();
+    if(!item || !current || recovering)return;
+
+    setButtonBusy(sendButton,true,'受け取り中…','送信する');
+    const pendingRow=drawMessage('ai','前の返事を取りにいってます…');
+
+    try{
+      await recoverAnswer(item.requestId,pendingRow,12);
+    }finally{
+      setButtonBusy(sendButton,false,'受け取り中…','送信する');
     }
   }
 
@@ -184,33 +333,50 @@
       event.preventDefault();
 
       const text=question.value.trim();
-      if(!text||!current)return;
+      if(!text||!current||sendButton.disabled)return;
+
+      const requestId=newRequestId();
 
       drawMessage('user',text);
       addHistory('user',text);
+      savePending({requestId,question:text,createdAt:Date.now()});
 
       question.value='';
       setButtonBusy(sendButton,true,'考え中…','送信する');
 
-      const pending=drawMessage('ai','考えちゅう…');
+      const pendingRow=drawMessage('ai','考えちゅう…');
 
       try{
         const data=await api('/api/ask',{
           passphrase:current,
-          question:text
+          question:text,
+          requestId
         });
 
-        const answer=data.answer||'返事が空っぽでした';
-        pending.querySelector('.bubble').innerHTML=renderAiText(answer);
-        addHistory('ai',answer);
+        if(Number.isFinite(data.remaining))setRemaining(data.remaining);
 
-        if(Number.isFinite(data.remaining)){
-          remaining.textContent='今日はあと '+data.remaining+' 回';
+        if(data.httpStatus===202 || data.state==='pending'){
+          pendingRow.querySelector('.bubble').textContent='返事を受け取り中…';
+          await recoverAnswer(requestId,pendingRow);
+          return;
         }
+
+        const answer=data.answer||'返事が空っぽでした';
+        pendingRow.querySelector('.bubble').innerHTML=renderAiText(answer);
+        addHistory('ai',answer);
+        clearPending();
+
       }catch(e){
-        const errorText='エラー: '+e.message;
-        pending.querySelector('.bubble').textContent=errorText;
-        addHistory('ai',errorText);
+        if(e.status===401){
+          pendingRow.remove();
+          forceLogout();
+          return;
+        }
+
+        // 「Load failed」等の通信断でも、サーバー側で回答が完成している可能性がある。
+        pendingRow.querySelector('.bubble').textContent='返事を受け取り中…';
+        await recoverAnswer(requestId,pendingRow);
+
       }finally{
         setButtonBusy(sendButton,false,'考え中…','送信する');
         question.focus();
@@ -219,11 +385,17 @@
   }
 
   restoreHistory();
+  showCachedRemaining();
 
   const savedPass=storageGet(PASS_KEY);
   if(savedPass){
+    // 保存済みなら通信確認より先にログイン状態を復元する。
+    // /api/checkの一時失敗だけでログイン画面へ戻さない。
+    current=savedPass;
     pass.value=savedPass;
-    unlock(savedPass);
+    login.hidden=true;
+    refreshUsage(savedPass);
+    resumePendingIfNeeded();
   }else{
     login.hidden=false;
   }
