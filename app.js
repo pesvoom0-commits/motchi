@@ -1,6 +1,8 @@
 (()=>{
+  'use strict';
+
   const PASS_KEY='motchi_ai_passphrase';
-  const CHAT_KEY='motchi_ai_chat_v1';
+  const CHAT_KEY='motchi_ai_chat_v2';
   const MAX_HISTORY_MESSAGES=80;
 
   const cfg=window.MOTCHI_AI_CONFIG||{};
@@ -8,16 +10,28 @@
 
   const login=document.getElementById('login');
   const pass=document.getElementById('passphrase');
-  const lb=document.getElementById('loginButton');
-  const le=document.getElementById('loginError');
+  const loginButton=document.getElementById('loginButton');
+  const loginError=document.getElementById('loginError');
   const form=document.getElementById('askForm');
-  const q=document.getElementById('question');
-  const send=document.getElementById('sendButton');
+  const question=document.getElementById('question');
+  const sendButton=document.getElementById('sendButton');
   const chat=document.getElementById('chat');
-  const rem=document.getElementById('remaining');
+  const remaining=document.getElementById('remaining');
 
   let current='';
   let history=loadHistory();
+
+  function storageGet(key){
+    try{return localStorage.getItem(key)||'';}catch(e){return '';}
+  }
+
+  function storageSet(key,value){
+    try{localStorage.setItem(key,value);}catch(e){}
+  }
+
+  function storageRemove(key){
+    try{localStorage.removeItem(key);}catch(e){}
+  }
 
   function escapeHtml(text){
     return String(text||'')
@@ -54,25 +68,29 @@
     return row;
   }
 
+  function saveHistory(){
+    storageSet(CHAT_KEY,JSON.stringify(history.slice(-MAX_HISTORY_MESSAGES)));
+  }
+
   function addHistory(kind,text){
     history.push({kind,text:String(text||'')});
     if(history.length>MAX_HISTORY_MESSAGES){
       history=history.slice(-MAX_HISTORY_MESSAGES);
     }
-    try{
-      localStorage.setItem(CHAT_KEY,JSON.stringify(history));
-    }catch(e){}
+    saveHistory();
   }
 
   function loadHistory(){
     try{
-      const raw=localStorage.getItem(CHAT_KEY);
-      const parsed=raw ? JSON.parse(raw) : [];
+      const raw=storageGet(CHAT_KEY);
+      if(!raw)return [];
+      const parsed=JSON.parse(raw);
       if(!Array.isArray(parsed))return [];
-      return parsed.filter(x =>
-        x &&
-        (x.kind==='user'||x.kind==='ai') &&
-        typeof x.text==='string'
+
+      return parsed.filter(item =>
+        item &&
+        (item.kind==='user'||item.kind==='ai') &&
+        typeof item.text==='string'
       ).slice(-MAX_HISTORY_MESSAGES);
     }catch(e){
       return [];
@@ -80,114 +98,135 @@
   }
 
   function restoreHistory(){
-    chat.innerHTML='';
+    if(!chat)return;
+
     if(history.length===0){
-      drawMessage('ai','美砂さん、なんでも聞いてください。');
+      // index.html にある最初の吹き出しをそのまま使う
       return;
     }
-    for(const item of history){
-      drawMessage(item.kind,item.text);
-    }
+
+    chat.innerHTML='';
+    history.forEach(item=>drawMessage(item.kind,item.text));
+  }
+
+  function setButtonBusy(button,busy,busyText,normalText){
+    if(!button)return;
+    button.disabled=busy;
+    button.textContent=busy ? busyText : normalText;
+    button.setAttribute('aria-busy',busy ? 'true' : 'false');
   }
 
   async function api(path,body){
     if(!base)throw new Error('まだAPI接続先が設定されていません。');
 
-    const r=await fetch(base+path,{
+    const response=await fetch(base+path,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify(body)
     });
 
-    let d={};
-    try{d=await r.json()}catch{}
+    let data={};
+    try{data=await response.json();}catch(e){}
 
-    if(!r.ok){
-      const e=new Error(d.error||'通信に失敗しました');
-      e.status=r.status;
-      throw e;
+    if(!response.ok){
+      const err=new Error(data.error||'通信に失敗しました');
+      err.status=response.status;
+      throw err;
     }
 
-    return d;
+    return data;
   }
 
   async function unlock(value){
-    const p=String(value??pass.value).trim();
-    if(!p){
+    const candidate=String(value!==undefined ? value : pass.value).trim();
+
+    if(!candidate){
       login.hidden=false;
       return;
     }
 
-    le.textContent='';
+    loginError.textContent='';
+    setButtonBusy(loginButton,true,'確認中…','ひらく');
 
     try{
-      const d=await api('/api/check',{passphrase:p});
-      current=p;
-      localStorage.setItem(PASS_KEY,p);
+      const data=await api('/api/check',{passphrase:candidate});
+      current=candidate;
+      storageSet(PASS_KEY,candidate);
 
-      if(Number.isFinite(d.remaining)){
-        rem.textContent='今日はあと '+d.remaining+' 回';
+      if(Number.isFinite(data.remaining)){
+        remaining.textContent='今日はあと '+data.remaining+' 回';
       }
 
       login.hidden=true;
     }catch(e){
       if(e.status===401){
-        localStorage.removeItem(PASS_KEY);
+        storageRemove(PASS_KEY);
       }
       login.hidden=false;
-      le.textContent=e.message;
+      loginError.textContent=e.message;
+    }finally{
+      setButtonBusy(loginButton,false,'確認中…','ひらく');
     }
   }
 
-  lb.onclick=()=>unlock();
+  if(loginButton){
+    loginButton.addEventListener('click',()=>unlock());
+  }
 
-  pass.addEventListener('keydown',e=>{
-    if(e.key==='Enter'){
-      e.preventDefault();
-      unlock();
-    }
-  });
-
-  form.onsubmit=async e=>{
-    e.preventDefault();
-
-    const text=q.value.trim();
-    if(!text||!current)return;
-
-    drawMessage('user',text);
-    addHistory('user',text);
-
-    q.value='';
-    send.disabled=true;
-
-    const pending=drawMessage('ai','考えちゅう…');
-
-    try{
-      const d=await api('/api/ask',{
-        passphrase:current,
-        question:text
-      });
-
-      const answer=d.answer||'返事が空っぽでした';
-      pending.querySelector('.bubble').innerHTML=renderAiText(answer);
-      addHistory('ai',answer);
-
-      if(Number.isFinite(d.remaining)){
-        rem.textContent='今日はあと '+d.remaining+' 回';
+  if(pass){
+    pass.addEventListener('keydown',event=>{
+      if(event.key==='Enter'){
+        event.preventDefault();
+        unlock();
       }
-    }catch(e){
-      pending.querySelector('.bubble').textContent=e.message;
-    }finally{
-      send.disabled=false;
-    }
-  };
+    });
+  }
+
+  if(form){
+    form.addEventListener('submit',async event=>{
+      event.preventDefault();
+
+      const text=question.value.trim();
+      if(!text||!current)return;
+
+      drawMessage('user',text);
+      addHistory('user',text);
+
+      question.value='';
+      setButtonBusy(sendButton,true,'考え中…','送信する');
+
+      const pending=drawMessage('ai','考えちゅう…');
+
+      try{
+        const data=await api('/api/ask',{
+          passphrase:current,
+          question:text
+        });
+
+        const answer=data.answer||'返事が空っぽでした';
+        pending.querySelector('.bubble').innerHTML=renderAiText(answer);
+        addHistory('ai',answer);
+
+        if(Number.isFinite(data.remaining)){
+          remaining.textContent='今日はあと '+data.remaining+' 回';
+        }
+      }catch(e){
+        const errorText='エラー: '+e.message;
+        pending.querySelector('.bubble').textContent=errorText;
+        addHistory('ai',errorText);
+      }finally{
+        setButtonBusy(sendButton,false,'考え中…','送信する');
+        question.focus();
+      }
+    });
+  }
 
   restoreHistory();
 
-  const saved=localStorage.getItem(PASS_KEY)||'';
-  if(saved){
-    pass.value=saved;
-    unlock(saved);
+  const savedPass=storageGet(PASS_KEY);
+  if(savedPass){
+    pass.value=savedPass;
+    unlock(savedPass);
   }else{
     login.hidden=false;
   }

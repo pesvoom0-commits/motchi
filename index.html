@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="theme-color" content="#f4f0e8">
   <title>もっち側にきいてみる</title>
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=20260923-2115">
 </head>
 <body>
   <main class="shell">
@@ -18,7 +18,11 @@
         本人の発言とAIの見立ては、なるべく分けて扱います。
       </p>
 
-      <div id="chat" class="chat" aria-live="polite"></div>
+      <div id="chat" class="chat" aria-live="polite">
+        <div class="message ai">
+          <div class="bubble">美砂さん、なんでも聞いてください。</div>
+        </div>
+      </div>
 
       <form id="askForm" class="composer">
         <textarea
@@ -51,7 +55,7 @@
     </div>
   </div>
 
-  <script src="./config.js"></script>
-  <script src="./app.js"></script>
+  <script src="./config.js?v=20260923-2115"></script>
+  <script src="./app.js?v=20260923-2115"></script>
 </body>
 </html>
