@@ -18,11 +18,7 @@
         本人の発言とAIの見立ては、なるべく分けて扱います。
       </p>
 
-      <div id="chat" class="chat" aria-live="polite">
-        <div class="message ai">
-          <div class="bubble">美砂さん、なんでも聞いてください。</div>
-        </div>
-      </div>
+      <div id="chat" class="chat" aria-live="polite"></div>
 
       <form id="askForm" class="composer">
         <textarea
@@ -36,11 +32,10 @@
           <button id="sendButton" type="submit">送信する</button>
         </div>
       </form>
-
     </section>
   </main>
 
-  <div id="login" class="login">
+  <div id="login" class="login" hidden>
     <div class="login-box">
       <div class="bird">🐔</div>
       <h2>あいことば</h2>
@@ -51,10 +46,6 @@
         autocomplete="current-password"
         enterkeyhint="go"
       >
-      <label class="remember">
-        <input id="rememberPassphrase" type="checkbox" checked>
-        この端末では覚えておく
-      </label>
       <button id="loginButton" type="button">ひらく</button>
       <div id="loginError" class="error"></div>
     </div>

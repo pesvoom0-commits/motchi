@@ -1,20 +1,23 @@
 (()=>{
-  const K='motchi_ai_passphrase',
-    cfg=window.MOTCHI_AI_CONFIG||{},
-    base=String(cfg.apiBase||'').replace(/\/$/,'');
+  const PASS_KEY='motchi_ai_passphrase';
+  const CHAT_KEY='motchi_ai_chat_v1';
+  const MAX_HISTORY_MESSAGES=80;
 
-  const login=document.getElementById('login'),
-    pass=document.getElementById('passphrase'),
-    remember=document.getElementById('rememberPassphrase'),
-    lb=document.getElementById('loginButton'),
-    le=document.getElementById('loginError'),
-    form=document.getElementById('askForm'),
-    q=document.getElementById('question'),
-    send=document.getElementById('sendButton'),
-    chat=document.getElementById('chat'),
-    rem=document.getElementById('remaining');
+  const cfg=window.MOTCHI_AI_CONFIG||{};
+  const base=String(cfg.apiBase||'').replace(/\/$/,'');
+
+  const login=document.getElementById('login');
+  const pass=document.getElementById('passphrase');
+  const lb=document.getElementById('loginButton');
+  const le=document.getElementById('loginError');
+  const form=document.getElementById('askForm');
+  const q=document.getElementById('question');
+  const send=document.getElementById('sendButton');
+  const chat=document.getElementById('chat');
+  const rem=document.getElementById('remaining');
 
   let current='';
+  let history=loadHistory();
 
   function escapeHtml(text){
     return String(text||'')
@@ -27,33 +30,64 @@
 
   function renderAiText(text){
     let html=escapeHtml(text);
-
-    // **太字**
     html=html.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
-
-    // 改行
     html=html.replace(/\r?\n/g,'<br>');
-
     return html;
   }
 
-  function msg(kind,text){
-    const r=document.createElement('div');
-    r.className='message '+kind;
+  function drawMessage(kind,text){
+    const row=document.createElement('div');
+    row.className='message '+kind;
 
-    const b=document.createElement('div');
-    b.className='bubble';
+    const bubble=document.createElement('div');
+    bubble.className='bubble';
 
     if(kind==='ai'){
-      b.innerHTML=renderAiText(text);
+      bubble.innerHTML=renderAiText(text);
     }else{
-      b.textContent=text;
+      bubble.textContent=text;
     }
 
-    r.appendChild(b);
-    chat.appendChild(r);
+    row.appendChild(bubble);
+    chat.appendChild(row);
     chat.scrollTop=chat.scrollHeight;
-    return r;
+    return row;
+  }
+
+  function addHistory(kind,text){
+    history.push({kind,text:String(text||'')});
+    if(history.length>MAX_HISTORY_MESSAGES){
+      history=history.slice(-MAX_HISTORY_MESSAGES);
+    }
+    try{
+      localStorage.setItem(CHAT_KEY,JSON.stringify(history));
+    }catch(e){}
+  }
+
+  function loadHistory(){
+    try{
+      const raw=localStorage.getItem(CHAT_KEY);
+      const parsed=raw ? JSON.parse(raw) : [];
+      if(!Array.isArray(parsed))return [];
+      return parsed.filter(x =>
+        x &&
+        (x.kind==='user'||x.kind==='ai') &&
+        typeof x.text==='string'
+      ).slice(-MAX_HISTORY_MESSAGES);
+    }catch(e){
+      return [];
+    }
+  }
+
+  function restoreHistory(){
+    chat.innerHTML='';
+    if(history.length===0){
+      drawMessage('ai','美砂さん、なんでも聞いてください。');
+      return;
+    }
+    for(const item of history){
+      drawMessage(item.kind,item.text);
+    }
   }
 
   async function api(path,body){
@@ -77,24 +111,42 @@
     return d;
   }
 
-  async function unlock(){
-    const p=pass.value.trim();
-    if(!p)return;
+  async function unlock(value){
+    const p=String(value??pass.value).trim();
+    if(!p){
+      login.hidden=false;
+      return;
+    }
+
+    le.textContent='';
 
     try{
       const d=await api('/api/check',{passphrase:p});
       current=p;
+      localStorage.setItem(PASS_KEY,p);
 
-      if(remember.checked)localStorage.setItem(K,p);
-      if(Number.isFinite(d.remaining))rem.textContent='今日はあと '+d.remaining+' 回';
+      if(Number.isFinite(d.remaining)){
+        rem.textContent='今日はあと '+d.remaining+' 回';
+      }
 
       login.hidden=true;
     }catch(e){
+      if(e.status===401){
+        localStorage.removeItem(PASS_KEY);
+      }
+      login.hidden=false;
       le.textContent=e.message;
     }
   }
 
-  lb.onclick=unlock;
+  lb.onclick=()=>unlock();
+
+  pass.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){
+      e.preventDefault();
+      unlock();
+    }
+  });
 
   form.onsubmit=async e=>{
     e.preventDefault();
@@ -102,11 +154,13 @@
     const text=q.value.trim();
     if(!text||!current)return;
 
-    msg('user',text);
+    drawMessage('user',text);
+    addHistory('user',text);
+
     q.value='';
     send.disabled=true;
 
-    const p=msg('ai','考えちゅう…');
+    const pending=drawMessage('ai','考えちゅう…');
 
     try{
       const d=await api('/api/ask',{
@@ -114,21 +168,27 @@
         question:text
       });
 
-      p.querySelector('.bubble').innerHTML=renderAiText(d.answer||'返事が空っぽでした');
+      const answer=d.answer||'返事が空っぽでした';
+      pending.querySelector('.bubble').innerHTML=renderAiText(answer);
+      addHistory('ai',answer);
 
       if(Number.isFinite(d.remaining)){
         rem.textContent='今日はあと '+d.remaining+' 回';
       }
     }catch(e){
-      p.querySelector('.bubble').textContent=e.message;
+      pending.querySelector('.bubble').textContent=e.message;
     }finally{
       send.disabled=false;
     }
   };
 
-  const s=localStorage.getItem(K)||'';
-  if(s){
-    pass.value=s;
-    unlock();
+  restoreHistory();
+
+  const saved=localStorage.getItem(PASS_KEY)||'';
+  if(saved){
+    pass.value=saved;
+    unlock(saved);
+  }else{
+    login.hidden=false;
   }
 })();
