@@ -7,7 +7,6 @@
   const PENDING_KEY='motchi_ai_pending_v1';
   const MAX_HISTORY_MESSAGES=80;
 
-  // まれにブラウザ側で同じUIが二重化しても、表示するアプリ本体は1つだけにする。
   const shells=[...document.querySelectorAll('main.shell')];
   shells.slice(1).forEach(node=>node.remove());
   const firstShell=shells[0]||document.querySelector('main.shell');
@@ -28,6 +27,8 @@
   const sendButton=document.getElementById('sendButton');
   const chat=document.getElementById('chat');
   const remaining=document.getElementById('remaining');
+  const utilityBar=document.getElementById('utilityBar');
+  const lockButton=document.getElementById('lockButton');
 
   let current='';
   let history=loadHistory();
@@ -196,6 +197,21 @@
     storageRemove(PENDING_KEY);
   }
 
+  function showLockedState(message=''){
+    current='';
+    storageRemove(PASS_KEY);
+    if(pass)pass.value='';
+    if(loginError)loginError.textContent=message;
+    if(utilityBar)utilityBar.hidden=true;
+    if(login)login.hidden=false;
+    setTimeout(()=>pass?.focus(),0);
+  }
+
+  function showUnlockedState(){
+    if(utilityBar)utilityBar.hidden=false;
+    if(login)login.hidden=true;
+  }
+
   async function api(path,body){
     if(!base)throw new Error('まだAPI接続先が設定されていません。');
 
@@ -227,10 +243,7 @@
   }
 
   function forceLogout(message){
-    current='';
-    storageRemove(PASS_KEY);
-    login.hidden=false;
-    loginError.textContent=message||'あいことばをもう一度入力してください。';
+    showLockedState(message||'あいことばをもう一度入力してください。');
   }
 
   async function refreshUsage(candidate,attempt=0){
@@ -244,7 +257,6 @@
         return false;
       }
 
-      // 通信失敗だけではログアウトしない。少し後でもう一度だけ確認する。
       if(attempt===0){
         setTimeout(()=>refreshUsage(candidate,1),4000);
       }
@@ -268,17 +280,17 @@
       current=candidate;
       storageSet(PASS_KEY,candidate);
       if(Number.isFinite(data.remaining))setRemaining(data.remaining);
-      login.hidden=true;
+      showUnlockedState();
       resumePendingIfNeeded();
     }catch(e){
       if(e.status===401){
         storageRemove(PASS_KEY);
         loginError.textContent=e.message;
       }else{
-        // 初回ログイン時だけは、認証できていないので画面を閉じない。
         loginError.textContent='通信が不安定です。もう一度「ひらく」を押してみてください。';
       }
       login.hidden=false;
+      if(utilityBar)utilityBar.hidden=true;
     }finally{
       setButtonBusy(loginButton,false,'確認中…','ひらく');
     }
@@ -318,7 +330,6 @@
             forceLogout();
             return false;
           }
-          // 一時的な通信断なら、そのまま再試行する。
         }
       }
 
@@ -345,6 +356,12 @@
 
   if(loginButton){
     loginButton.addEventListener('click',()=>unlock());
+  }
+
+  if(lockButton){
+    lockButton.addEventListener('click',()=>{
+      showLockedState('');
+    });
   }
 
   if(pass){
@@ -412,7 +429,6 @@
           return;
         }
 
-        // 「Load failed」等の通信断でも、サーバー側で回答が完成している可能性がある。
         pendingRow.querySelector('.bubble').textContent='返事を受け取り中…';
         await recoverAnswer(requestId,pendingRow);
 
@@ -435,14 +451,12 @@
 
   const savedPass=storageGet(PASS_KEY);
   if(savedPass){
-    // 保存済みなら通信確認より先にログイン状態を復元する。
-    // /api/checkの一時失敗だけでログイン画面へ戻さない。
     current=savedPass;
     pass.value=savedPass;
-    login.hidden=true;
+    showUnlockedState();
     refreshUsage(savedPass);
     resumePendingIfNeeded();
   }else{
-    login.hidden=false;
+    showLockedState('');
   }
 })();

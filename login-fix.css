@@ -1,9 +1,4 @@
-/* Production login overlay fix
-   - Put the login screen above the fixed composer
-   - Make the backdrop fully opaque
-   - Stop the underlying page from scrolling while login is open
-*/
-
+/* Production login overlay + lock link */
 .login{
   z-index:1000 !important;
   background:#f4f0e8 !important;
@@ -16,4 +11,46 @@
 
 body:has(.login:not([hidden])){
   overflow:hidden;
+}
+
+.utility-bar{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  margin:0 4px 10px;
+}
+
+.utility-bar[hidden]{
+  display:none !important;
+}
+
+.lock-link{
+  appearance:none;
+  -webkit-appearance:none;
+  border:0;
+  border-radius:0;
+  padding:0;
+  background:transparent;
+  color:#5f5b55;
+  font:inherit;
+  font-size:12px;
+  line-height:1.4;
+  text-decoration:underline;
+  text-underline-offset:3px;
+  cursor:pointer;
+}
+
+.lock-link:hover{
+  color:#272624;
+}
+
+.lock-link:focus-visible{
+  outline:2px solid #272624;
+  outline-offset:4px;
+}
+
+@media (max-width:560px){
+  .utility-bar{
+    margin:0 6px 8px;
+  }
 }
