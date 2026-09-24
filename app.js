@@ -66,9 +66,33 @@
     return html;
   }
 
-  function drawMessage(kind,text){
+  function formatMessageTime(ts){
+    if(!ts)return '';
+    const d=new Date(ts);
+    if(Number.isNaN(d.getTime()))return '';
+    const y=d.getFullYear();
+    const m=String(d.getMonth()+1).padStart(2,'0');
+    const day=String(d.getDate()).padStart(2,'0');
+    const hh=String(d.getHours()).padStart(2,'0');
+    const mm=String(d.getMinutes()).padStart(2,'0');
+    return `${y}/${m}/${day} ${hh}:${mm}`;
+  }
+
+  function avatarSrc(kind){
+    return kind==='user' ? './misa-icon.jpg' : './chatgpt-icon.svg';
+  }
+
+  function drawMessage(kind,text,ts=null){
     const row=document.createElement('div');
     row.className='message '+kind;
+
+    const avatar=document.createElement('img');
+    avatar.className='message-avatar';
+    avatar.src=avatarSrc(kind);
+    avatar.alt=kind==='user' ? '美砂さん' : 'ChatGPT';
+
+    const body=document.createElement('div');
+    body.className='message-body';
 
     const bubble=document.createElement('div');
     bubble.className='bubble';
@@ -79,18 +103,44 @@
       bubble.textContent=text;
     }
 
-    row.appendChild(bubble);
+    const meta=document.createElement('div');
+    meta.className='message-meta';
+    meta.textContent=formatMessageTime(ts);
+    if(!meta.textContent)meta.hidden=true;
+
+    body.appendChild(bubble);
+    body.appendChild(meta);
+
+    if(kind==='user'){
+      row.appendChild(body);
+      row.appendChild(avatar);
+    }else{
+      row.appendChild(avatar);
+      row.appendChild(body);
+    }
+
     chat.appendChild(row);
     chat.scrollTop=chat.scrollHeight;
     return row;
+  }
+
+  function updateMessage(row,text,ts=Date.now()){
+    const bubble=row?.querySelector('.bubble');
+    const meta=row?.querySelector('.message-meta');
+    if(bubble)bubble.innerHTML=renderAiText(text);
+    if(meta){
+      meta.textContent=formatMessageTime(ts);
+      meta.hidden=!meta.textContent;
+    }
+    return ts;
   }
 
   function saveHistory(){
     storageSet(CHAT_KEY,JSON.stringify(history.slice(-MAX_HISTORY_MESSAGES)));
   }
 
-  function addHistory(kind,text){
-    history.push({kind,text:String(text||'')});
+  function addHistory(kind,text,ts=Date.now()){
+    history.push({kind,text:String(text||''),ts});
     if(history.length>MAX_HISTORY_MESSAGES){
       history=history.slice(-MAX_HISTORY_MESSAGES);
     }
@@ -108,7 +158,11 @@
         item &&
         (item.kind==='user'||item.kind==='ai') &&
         typeof item.text==='string'
-      ).slice(-MAX_HISTORY_MESSAGES);
+      ).map(item=>({
+        kind:item.kind,
+        text:item.text,
+        ts:Number.isFinite(Number(item.ts)) ? Number(item.ts) : null
+      })).slice(-MAX_HISTORY_MESSAGES);
     }catch(e){
       return [];
     }
@@ -137,7 +191,7 @@
 
     chat.innerHTML='';
     drawMessage('ai','美砂さん、なんでも聞いてください。');
-    history.forEach(item=>drawMessage(item.kind,item.text));
+    history.forEach(item=>drawMessage(item.kind,item.text,item.ts));
   }
 
   function setButtonBusy(button,busy,busyText,normalText){
@@ -314,8 +368,8 @@
 
           if(data.state==='completed'){
             const answer=data.answer||'返事が空っぽでした';
-            pendingRow.querySelector('.bubble').innerHTML=renderAiText(answer);
-            addHistory('ai',answer);
+            const aiTs=updateMessage(pendingRow,answer,Date.now());
+            addHistory('ai',answer,aiTs);
             clearPending();
             return true;
           }
@@ -383,8 +437,9 @@
       const requestId=newRequestId();
       const conversation=buildConversationContext();
 
-      drawMessage('user',text);
-      addHistory('user',text);
+      const userTs=Date.now();
+      drawMessage('user',text,userTs);
+      addHistory('user',text,userTs);
       savePending({requestId,question:text,createdAt:Date.now()});
 
       question.value='';
@@ -409,8 +464,8 @@
         }
 
         const answer=data.answer||'返事が空っぽでした';
-        pendingRow.querySelector('.bubble').innerHTML=renderAiText(answer);
-        addHistory('ai',answer);
+        const aiTs=updateMessage(pendingRow,answer,Date.now());
+        addHistory('ai',answer,aiTs);
         clearPending();
 
       }catch(e){
@@ -422,8 +477,8 @@
 
         if(e.status===429){
           const message=limitMessage();
-          pendingRow.querySelector('.bubble').textContent=message;
-          addHistory('ai',message);
+          const aiTs=updateMessage(pendingRow,message,Date.now());
+          addHistory('ai',message,aiTs);
           clearPending();
           setRemaining(0);
           return;
