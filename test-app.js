@@ -1,7 +1,7 @@
 (()=>{
   'use strict';
 
-  const PASS_KEY='motchi_ai_passphrase';
+  const PASS_KEY='motchi_ai_test_passphrase';
   const CHAT_KEY='motchi_ai_test_chat_v1';
   const MAX_HISTORY_MESSAGES=80;
 
@@ -167,7 +167,7 @@
     loginButton.textContent='確認中…';
 
     try{
-      await api('/api/check',{passphrase:candidate});
+      await api('/api/test/check',{passphrase:candidate});
       current=candidate;
       storageSet(PASS_KEY,candidate);
       login.hidden=true;
