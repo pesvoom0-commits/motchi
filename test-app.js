@@ -142,6 +142,7 @@
     if(!response.ok){
       const err=new Error(data.error||'通信に失敗しました');
       err.status=response.status;
+      err.detail=data.detail||'';
       throw err;
     }
 
@@ -231,6 +232,9 @@
       const answer=data.answer||'返事が空っぽでした';
       pendingRow.querySelector('.bubble').innerHTML=renderAiText(answer);
       addHistory('ai',answer);
+      if(data.testDiagnostic){
+        status.textContent=data.testDiagnostic;
+      }
     }catch(e){
       if(e.status===401){
         pendingRow.remove();
@@ -238,7 +242,7 @@
         return;
       }
 
-      pendingRow.querySelector('.bubble').textContent='エラー: '+e.message;
+      pendingRow.querySelector('.bubble').textContent='エラー: '+e.message+(e.detail ? '\n詳細: '+e.detail : '');
     }finally{
       setBusy(false);
       question.focus();
