@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#f4f0e8">
+  <title>弟子チャッピー 会話テスト</title>
+  <link rel="stylesheet" href="./styles.css?v=20260924-test">
+  <style>
+    .test-note{
+      margin:0 0 18px;
+      padding:10px 12px;
+      border:1px solid rgba(0,0,0,.14);
+      font-size:13px;
+      line-height:1.6;
+    }
+    .test-tools{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-top:10px;
+    }
+    .test-tools button{
+      border:0;
+      background:transparent;
+      padding:6px 0;
+      font:inherit;
+      font-size:13px;
+      text-decoration:underline;
+      cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="card">
+      <header class="app-header">
+        <div class="eyebrow">MOTCHI’s AI / TEST</div>
+        <h1>弟子チャッピー 会話テスト</h1>
+        <p class="lead">
+          本番と同じ資料・キャラクター設定で会話だけをテストします。
+        </p>
+      </header>
+
+      <p class="test-note">
+        この画面からの質問は、本番の1日20回を消費せず、QA_LOGにも保存しません。
+        会話履歴はこの端末のテスト用領域だけに保存されます。
+      </p>
+
+      <div id="chat" class="chat" aria-live="polite">
+        <div class="message ai">
+          <div class="bubble">テスト準備できてます。なんでもどうぞ。</div>
+        </div>
+      </div>
+
+      <form id="askForm" class="composer">
+        <textarea
+          id="question"
+          rows="3"
+          maxlength="2000"
+          placeholder="弟子チャッピーにテスト質問を送る"
+        ></textarea>
+        <div class="composer-foot">
+          <span class="remaining">TEST MODE</span>
+          <button id="sendButton" type="submit">送信する</button>
+        </div>
+        <div class="test-tools">
+          <span id="status"></span>
+          <button id="clearButton" type="button">会話をリセット</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <div id="login" class="login" hidden>
+    <div class="login-box">
+      <div class="bird">🐔</div>
+      <h2>あいことば</h2>
+      <p>本番と同じあいことばです。</p>
+      <input
+        id="passphrase"
+        type="password"
+        autocomplete="current-password"
+        enterkeyhint="go"
+      >
+      <button id="loginButton" type="button">ひらく</button>
+      <div id="loginError" class="error"></div>
+    </div>
+  </div>
+
+  <script src="./config.js?v=20260924-test"></script>
+  <script src="./test-app.js?v=20260924-test"></script>
+</body>
+</html>
