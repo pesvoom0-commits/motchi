@@ -196,10 +196,13 @@
   });
 
   clearButton.addEventListener('click',()=>{
+    const ok=window.confirm('テスト画面の会話履歴をすべて消しますか？');
+    if(!ok)return;
+
     history=[];
     storageRemove(CHAT_KEY);
     restoreHistory();
-    status.textContent='会話をリセットしました';
+    status.textContent='テスト画面の履歴をクリアしました';
     question.focus();
   });
 

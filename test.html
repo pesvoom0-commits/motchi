@@ -18,9 +18,9 @@
     .test-tools{
       display:flex;
       align-items:center;
-      justify-content:space-between;
+      justify-content:flex-end;
       gap:12px;
-      margin-top:10px;
+      margin:0 0 12px;
     }
     .test-tools button{
       border:0;
@@ -30,6 +30,12 @@
       font-size:13px;
       text-decoration:underline;
       cursor:pointer;
+    }
+    .test-status{
+      min-height:1.4em;
+      margin:0 0 8px;
+      font-size:12px;
+      opacity:.65;
     }
   </style>
 </head>
@@ -49,6 +55,11 @@
         会話履歴はこの端末のテスト用領域だけに保存されます。
       </p>
 
+      <div class="test-tools">
+        <button id="clearButton" type="button">画面の履歴をクリア</button>
+      </div>
+      <div id="status" class="test-status" aria-live="polite"></div>
+
       <div id="chat" class="chat" aria-live="polite">
         <div class="message ai">
           <div class="bubble">テスト準備できてます。なんでもどうぞ。</div>
@@ -65,10 +76,6 @@
         <div class="composer-foot">
           <span class="remaining">TEST MODE</span>
           <button id="sendButton" type="submit">送信する</button>
-        </div>
-        <div class="test-tools">
-          <span id="status"></span>
-          <button id="clearButton" type="button">会話をリセット</button>
         </div>
       </form>
     </section>
@@ -90,7 +97,7 @@
     </div>
   </div>
 
-  <script src="./config.js?v=20260924-1918-v2"></script>
-  <script src="./test-app.js?v=20260924-1918-v2"></script>
+  <script src="./config.js?v=20260924-1925-v4"></script>
+  <script src="./test-app.js?v=20260924-1925-v4"></script>
 </body>
 </html>
