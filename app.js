@@ -266,8 +266,16 @@
     if(login)login.hidden=true;
   }
 
-  async function api(path,body){
+  async function api(path,body,timeoutMs){
     if(!base)throw new Error('まだAPI接続先が設定されていません。');
+
+    const defaultTimeout =
+      path==='/api/ask' ? 45000 :
+      path==='/api/result' ? 8000 :
+      12000;
+
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),timeoutMs||defaultTimeout);
 
     let response;
     try{
@@ -275,12 +283,17 @@
         method:'POST',
         headers:{'Content-Type':'application/json'},
         cache:'no-store',
-        body:JSON.stringify(body)
+        body:JSON.stringify(body),
+        signal:controller.signal
       });
     }catch(networkError){
-      const err=new Error('通信が途中で切れました');
+      const timedOut=networkError && networkError.name==='AbortError';
+      const err=new Error(timedOut ? '通信がタイムアウトしました' : '通信が途中で切れました');
       err.network=true;
+      err.timeout=timedOut;
       throw err;
+    }finally{
+      clearTimeout(timer);
     }
 
     let data={};
@@ -353,9 +366,12 @@
   async function recoverAnswer(requestId,pendingRow,maxAttempts=20){
     if(recovering)return false;
     recovering=true;
+    const startedAt=Date.now();
+    const recoveryDeadlineMs=60000;
 
     try{
       for(let i=0;i<maxAttempts;i++){
+        if(Date.now()-startedAt>recoveryDeadlineMs)break;
         if(i>0)await sleep(1500);
 
         try{
@@ -387,7 +403,7 @@
         }
       }
 
-      pendingRow.querySelector('.bubble').textContent='通信が不安定です。少し時間をおいて、ページを開き直してください。返事が完成していれば自動で回収します。';
+      pendingRow.querySelector('.bubble').textContent='返事の受け取りに時間がかかっています。ページを開き直すと、完成していれば自動で回収します。';
       return false;
     }finally{
       recovering=false;
