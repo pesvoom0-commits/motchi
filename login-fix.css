@@ -1,0 +1,19 @@
+/* Production login overlay fix
+   - Put the login screen above the fixed composer
+   - Make the backdrop fully opaque
+   - Stop the underlying page from scrolling while login is open
+*/
+
+.login{
+  z-index:1000 !important;
+  background:#f4f0e8 !important;
+}
+
+.login-box{
+  position:relative;
+  z-index:1;
+}
+
+body:has(.login:not([hidden])){
+  overflow:hidden;
+}
