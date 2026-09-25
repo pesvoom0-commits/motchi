@@ -93,6 +93,105 @@
     node.appendChild(dots);
   }
 
+  let copyToastTimer=null;
+
+  function showCopyToast(text='コピーしました'){
+    let toast=document.getElementById('copyToast');
+    if(!toast){
+      toast=document.createElement('div');
+      toast.id='copyToast';
+      toast.className='copy-toast';
+      toast.setAttribute('role','status');
+      toast.setAttribute('aria-live','polite');
+      document.body.appendChild(toast);
+    }
+
+    toast.textContent=text;
+    toast.classList.add('show');
+    clearTimeout(copyToastTimer);
+    copyToastTimer=setTimeout(()=>toast.classList.remove('show'),1200);
+  }
+
+  async function copyTextToClipboard(text){
+    const value=String(text||'').trim();
+    if(!value)return false;
+
+    try{
+      if(navigator.clipboard && window.isSecureContext){
+        await navigator.clipboard.writeText(value);
+        return true;
+      }
+    }catch(_){}
+
+    try{
+      const ta=document.createElement('textarea');
+      ta.value=value;
+      ta.setAttribute('readonly','');
+      ta.style.position='fixed';
+      ta.style.opacity='0';
+      ta.style.pointerEvents='none';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok=document.execCommand('copy');
+      ta.remove();
+      return ok;
+    }catch(_){
+      return false;
+    }
+  }
+
+  function installLongPressCopy(bubble){
+    if(!bubble || bubble.dataset.longPressCopy==='1')return;
+    bubble.dataset.longPressCopy='1';
+
+    let timer=null;
+    let startX=0;
+    let startY=0;
+    let fired=false;
+
+    const cancel=()=>{
+      if(timer){
+        clearTimeout(timer);
+        timer=null;
+      }
+    };
+
+    bubble.addEventListener('pointerdown',e=>{
+      if(e.pointerType==='mouse' && e.button!==0)return;
+      startX=e.clientX;
+      startY=e.clientY;
+      fired=false;
+      cancel();
+
+      timer=setTimeout(async()=>{
+        timer=null;
+        fired=true;
+        const ok=await copyTextToClipboard(bubble.innerText);
+        if(ok){
+          if(navigator.vibrate)navigator.vibrate(18);
+          showCopyToast('全文コピーしました');
+        }else{
+          showCopyToast('コピーできませんでした');
+        }
+      },650);
+    });
+
+    bubble.addEventListener('pointermove',e=>{
+      if(Math.abs(e.clientX-startX)>10 || Math.abs(e.clientY-startY)>10){
+        cancel();
+      }
+    });
+
+    bubble.addEventListener('pointerup',cancel);
+    bubble.addEventListener('pointercancel',cancel);
+    bubble.addEventListener('pointerleave',cancel);
+
+    bubble.addEventListener('contextmenu',e=>{
+      if(fired)e.preventDefault();
+    });
+  }
+
   function setPendingMessage(row,text){
     const bubble=row?.querySelector('.bubble');
     if(bubble)renderLoadingState(bubble,text);
@@ -153,6 +252,7 @@
 
     chat.appendChild(row);
     chat.scrollTop=chat.scrollHeight;
+    installLongPressCopy(bubble);
     return row;
   }
 

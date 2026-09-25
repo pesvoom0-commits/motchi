@@ -280,3 +280,33 @@ textarea,
     transform:none;
   }
 }
+
+
+/* v17.1: message long-press copy */
+.bubble{
+  -webkit-touch-callout:none;
+}
+.copy-toast{
+  position:fixed;
+  left:50%;
+  bottom:max(24px, calc(env(safe-area-inset-bottom) + 18px));
+  transform:translate(-50%,10px);
+  z-index:2000;
+  padding:9px 13px;
+  border-radius:999px;
+  background:rgba(36,36,34,.92);
+  color:#fff;
+  font-size:13px;
+  line-height:1.2;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .16s ease, transform .16s ease;
+  white-space:nowrap;
+}
+.copy-toast.show{
+  opacity:1;
+  transform:translate(-50%,0);
+}
+@media (prefers-reduced-motion:reduce){
+  .copy-toast{transition:none}
+}
