@@ -6,64 +6,34 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="theme-color" content="#f4f0e8">
   <title>弟子チャッピー 会話テスト</title>
-  <link rel="stylesheet" href="./styles.css?v=20260924-test">
-  <style>
-    .test-note{
-      margin:0 0 18px;
-      padding:10px 12px;
-      border:1px solid rgba(0,0,0,.14);
-      font-size:13px;
-      line-height:1.6;
-    }
-    .test-tools{
-      display:flex;
-      align-items:center;
-      justify-content:flex-end;
-      gap:12px;
-      margin:0 0 12px;
-    }
-    .test-tools button{
-      border:0;
-      background:transparent;
-      padding:6px 0;
-      font:inherit;
-      font-size:13px;
-      color:#222;
-      text-decoration:underline;
-      cursor:pointer;
-    }
-    .test-status{
-      min-height:1.4em;
-      margin:0 0 8px;
-      font-size:12px;
-      opacity:.65;
-    }
-  </style>
+  <link rel="stylesheet" href="./styles.css?v=20260923-2345">
+  <link rel="stylesheet" href="./login-fix.css?v=20260925-1637">
 </head>
 <body>
   <main class="shell">
+    <div id="utilityBar" class="utility-bar" hidden>
+      <span class="app-version">ver 1.0.3 TEST <span class="version-sep">·</span> updated 2026.09.25</span>
+      <div class="utility-actions">
+        <button id="adminUsageButton" class="lock-link" type="button">本番残り -- 回</button>
+        <button id="clearButton" class="lock-link" type="button">履歴をクリア</button>
+        <button id="lockButton" class="lock-link" type="button">鍵をかける</button>
+      </div>
+    </div>
+
+    <div id="testDiagnostic" class="test-diagnostic" hidden></div>
     <section class="card">
       <header class="app-header">
         <div class="eyebrow">MOTCHI’s AI / TEST</div>
-        <h1>弟子チャッピー 会話テスト</h1>
+        <h1>もっちのAIと話してみる</h1>
         <p class="lead">
-          本番と同じ資料・キャラクター設定で会話だけをテストします。
+          洋輔さん側で共有されている情報をもとに答えます。<br>
+          本人の発言とAIの見立ては、なるべく分けて扱います。
         </p>
       </header>
 
-      <p class="test-note">
-        この画面からの質問は、本番の1日20回を消費せず、QA_LOGにも保存しません。
-        会話履歴はこの端末のテスト用領域だけに保存されます。
-      </p>
-
-      <div class="test-tools">
-        <button id="clearButton" type="button">画面の履歴をクリア</button>
-      </div>
-      <div id="status" class="test-status" aria-live="polite"></div>
-
       <div id="chat" class="chat" aria-live="polite">
         <div class="message ai">
-          <div class="bubble">テスト準備できてます。なんでもどうぞ。</div>
+          <div class="bubble">美砂さん、なんでも聞いてください。</div>
         </div>
       </div>
 
@@ -72,10 +42,10 @@
           id="question"
           rows="3"
           maxlength="2000"
-          placeholder="弟子チャッピーにテスト質問を送る"
+          placeholder="たとえば『洋輔さんって◯◯の時なんて言ってた？』"
         ></textarea>
         <div class="composer-foot">
-          <span class="remaining">TEST MODE</span>
+          <span id="remaining" class="remaining">TEST MODE</span>
           <button id="sendButton" type="submit">送信する</button>
         </div>
       </form>
@@ -86,7 +56,7 @@
     <div class="login-box">
       <div class="bird">🐔</div>
       <h2>あいことば</h2>
-      <p>テスト専用のあいことばです。</p>
+      <p>最初だけいれてね。</p>
       <input
         id="passphrase"
         type="password"
@@ -95,10 +65,11 @@
       >
       <button id="loginButton" type="button">ひらく</button>
       <div id="loginError" class="error"></div>
+      <div class="test-login-note">テスト専用のあいことばです。</div>
     </div>
   </div>
 
-  <script src="./config.js?v=20260924-1925-v4"></script>
-  <script src="./test-app.js?v=20260924-v7"></script>
+  <script src="./config.js?v=20260923-2345"></script>
+  <script src="./test-app.js?v=20260925-1637"></script>
 </body>
 </html>

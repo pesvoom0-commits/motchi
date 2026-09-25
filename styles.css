@@ -1,87 +1,14 @@
 body{margin:0;min-height:100svh;padding:22px;background:#f4f0e8;color:#272624;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}.shell{width:min(100%,520px);margin:auto}.card{background:#fffdf8;border:1px solid #e6dfd4;border-radius:28px;padding:28px 22px;box-shadow:0 18px 50px rgba(45,39,31,.08)}.eyebrow{font-size:11px;letter-spacing:.14em;color:#8a847c}.lead,.notice{color:#8a847c;font-size:13px;line-height:1.8}.chat{margin:28px 0 18px;min-height:250px;max-height:52svh;overflow:auto;display:flex;flex-direction:column;gap:10px}.message{display:flex}.message.user{justify-content:flex-end}.bubble{max-width:86%;padding:12px 14px;border-radius:17px;background:#292826;color:#fffdf8;white-space:pre-wrap;line-height:1.7}.message.user .bubble{background:#e9e2d7;color:#272624}.composer{border-top:1px solid #e6dfd4;padding-top:16px}textarea{width:100%;box-sizing:border-box;padding:13px;border:1px solid #e6dfd4;border-radius:15px}.composer-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px}button{border:0;border-radius:14px;padding:12px 17px;background:#272624;color:#fff;transition:opacity .15s ease,transform .15s ease}button:not(:disabled):active{transform:scale(.98)}button:disabled{opacity:.55;cursor:wait}.login{position:fixed;inset:0;display:grid;place-items:center;background:rgba(244,240,232,.97)}.login[hidden]{display:none}.login-box{width:min(90%,360px);text-align:center}.login-box input[type=password]{width:100%;box-sizing:border-box;padding:12px;margin:10px 0}.bird{font-size:38px}.error{margin-top:10px;font-size:13px;color:#8a3b31;line-height:1.6}
 #loginButton,#sendButton{font-size:20px}
-/* 二重描画が起きた場合も、アプリ本体のカードは1枚だけ表示する */
 body > main.shell ~ main.shell{display:none!important}
 main.shell > .card ~ .card{display:none!important}
-
-
-/* v7: mobile interaction / scrolling layout */
-html{
-  -webkit-text-size-adjust:100%;
-  text-size-adjust:100%;
-  overscroll-behavior-y:none;
-}
-body{
-  box-sizing:border-box;
-  min-height:100dvh;
-  padding-bottom:calc(170px + env(safe-area-inset-bottom));
-  overflow-x:hidden;
-}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;overscroll-behavior-y:none}
+body{box-sizing:border-box;min-height:100dvh;padding-bottom:calc(170px + env(safe-area-inset-bottom));overflow-x:hidden}
 *,*::before,*::after{box-sizing:border-box}
-
-/* Header stays at the top of the document; it does not follow while reading. */
-.app-header{
-  position:static!important;
-  top:auto!important;
-  z-index:auto!important;
-}
-
-/* The conversation belongs to the page itself, not an inner scrolling pane. */
-.chat{
-  max-height:none!important;
-  min-height:250px;
-  overflow:visible!important;
-  overscroll-behavior:auto;
-  padding-bottom:18px;
-}
-
-/* Prevent iPhone/Safari focus zoom. */
-textarea,
-.login-box input[type=password]{
-  font-size:16px!important;
-}
-
-/* Composer is always visible at the bottom of the viewport. */
-.composer{
-  position:fixed;
-  z-index:30;
-  left:50%;
-  bottom:0;
-  transform:translateX(-50%);
-  width:min(calc(100% - 44px),520px);
-  margin:0;
-  padding:16px 22px calc(16px + env(safe-area-inset-bottom));
-  background:#fffdf8;
-  border:1px solid #e6dfd4;
-  border-bottom:0;
-  border-radius:22px 22px 0 0;
-  box-shadow:0 -14px 35px rgba(45,39,31,.08);
-}
-
-.composer textarea{
-  display:block;
-  resize:none;
-}
-
-/* Keep content clear of the fixed composer on small screens. */
-.card{
-  padding-bottom:34px;
-}
-
-@media (max-width:560px){
-  body{
-    padding:12px 12px calc(170px + env(safe-area-inset-bottom));
-  }
-  .shell{width:100%}
-  .card{
-    border-radius:24px;
-    padding:24px 18px 34px;
-  }
-  .composer{
-    width:100%;
-    padding:14px 18px calc(14px + env(safe-area-inset-bottom));
-    border-left:0;
-    border-right:0;
-    border-radius:18px 18px 0 0;
-  }
-}
+.app-header{position:static!important;top:auto!important;z-index:auto!important}
+.chat{max-height:none!important;min-height:250px;overflow:visible!important;overscroll-behavior:auto;padding-bottom:18px}
+textarea,.login-box input[type=password]{font-size:16px!important}
+.composer{position:fixed;z-index:30;left:50%;bottom:0;transform:translateX(-50%);width:min(calc(100% - 44px),520px);margin:0;padding:16px 22px calc(16px + env(safe-area-inset-bottom));background:#fffdf8;border:1px solid #e6dfd4;border-bottom:0;border-radius:22px 22px 0 0;box-shadow:0 -14px 35px rgba(45,39,31,.08)}
+.composer textarea{display:block;resize:none}
+.card{padding-bottom:34px}
+@media (max-width:560px){body{padding:12px 12px calc(170px + env(safe-area-inset-bottom))}.shell{width:100%}.card{border-radius:24px;padding:24px 18px 34px}.composer{width:100%;padding:14px 18px calc(14px + env(safe-area-inset-bottom));border-left:0;border-right:0;border-radius:18px 18px 0 0}}

@@ -215,3 +215,29 @@ textarea,
   height:28px;
   flex:0 0 28px;
 }
+
+
+/* TEST-only controls; production visual language stays the same. */
+.utility-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.test-diagnostic{
+  margin:0 4px 8px;
+  color:#777;
+  font-size:10px;
+  line-height:1.4;
+}
+.test-login-note{
+  margin-top:10px;
+  color:#8a847c;
+  font-size:11px;
+}
+@media (max-width:560px){
+  .utility-bar{align-items:flex-start}
+  .utility-actions{gap:9px}
+  .lock-link{font-size:11px}
+}
