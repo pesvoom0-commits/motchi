@@ -323,11 +323,10 @@
     if(!base)throw new Error('まだAPI接続先が設定されていません。');
 
     const defaultTimeout =
-      path==='/api/test/ask' ? 30000 :
+      path==='/api/test/ask' ? 60000 :
       path==='/api/test/result' ? 10000 :
-      (path==='/api/ask' ? 45000 :
       path==='/api/result' ? 8000 :
-      12000);
+      12000;
 
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(),timeoutMs||defaultTimeout);
@@ -407,59 +406,104 @@
     }
   }
 
-  async function recoverAnswer(responseId,pendingRow,pendingMeta={},maxAttempts=60){
+  async function pollTestResult(item,pendingRow,maxAttempts=22){
+    for(let i=0;i<maxAttempts;i++){
+      if(i>0)await sleep(1800);
+
+      try{
+        const data=await api('/api/test/result',{
+          passphrase:current,
+          requestId:item.requestId
+        });
+
+        if(data.state==='completed'){
+          const answer=data.answer||'返事が空っぽでした';
+          const aiTs=updateMessage(pendingRow,answer,Date.now());
+          addHistory('ai',answer,aiTs);
+          clearPending();
+          refreshProductionUsage();
+          return {done:true};
+        }
+
+        if(data.state==='unknown'){
+          return {done:false,unknown:true};
+        }
+
+        setPendingMessage(pendingRow,'返事を受け取り中');
+
+      }catch(e){
+        if(e.status===401){
+          forceLogout();
+          return {done:false,auth:true};
+        }
+        setPendingMessage(pendingRow,'返事を受け取り中');
+      }
+    }
+
+    return {done:false};
+  }
+
+  async function retryPendingAsk(item,pendingRow){
+    try{
+      const data=await api('/api/test/ask',{
+        passphrase:current,
+        question:item.question,
+        requestId:item.requestId,
+        conversation:Array.isArray(item.conversation) ? item.conversation : []
+      });
+
+      if(data.state==='completed' || (data.answer && data.httpStatus!==202)){
+        const answer=data.answer||'返事が空っぽでした';
+        const aiTs=updateMessage(pendingRow,answer,Date.now());
+        addHistory('ai',answer,aiTs);
+        clearPending();
+
+        if(testDiagnostic){
+          testDiagnostic.textContent=data.testDiagnostic||item.testDiagnostic||'';
+          testDiagnostic.hidden=!testDiagnostic.textContent;
+        }
+
+        refreshProductionUsage();
+        return true;
+      }
+
+      if(data.testDiagnostic){
+        item.testDiagnostic=data.testDiagnostic;
+        savePending(item);
+      }
+
+      setPendingMessage(pendingRow,'返事を受け取り中');
+      const polled=await pollTestResult(item,pendingRow,28);
+      return Boolean(polled.done);
+
+    }catch(e){
+      setPendingMessage(pendingRow,'返事を受け取り中');
+      return false;
+    }
+  }
+
+  async function recoverAnswer(item,pendingRow){
     if(recovering)return false;
     recovering=true;
 
     try{
-      for(let i=0;i<maxAttempts;i++){
-        if(i>0)await sleep(1500);
+      // First give the original Worker time to finish and write the temporary result.
+      let result=await pollTestResult(item,pendingRow,12);
+      if(result.done)return true;
 
-        try{
-          const data=await api('/api/test/result',{
-            passphrase:current,
-            responseId
-          });
+      // If the original mobile connection killed the job, retry the exact same
+      // requestId. Apps Script prevents immediate duplicates and allows stale retries.
+      setPendingMessage(pendingRow,'もう一度つないでます');
+      const retried=await retryPendingAsk(item,pendingRow);
+      if(retried)return true;
 
-          if(data.state==='completed'){
-            const answer=data.answer||'返事が空っぽでした';
-            const aiTs=updateMessage(pendingRow,answer,Date.now());
-            addHistory('ai',answer,aiTs);
-            clearPending();
-
-            if(testDiagnostic){
-              testDiagnostic.textContent=pendingMeta.testDiagnostic||'';
-              testDiagnostic.hidden=!pendingMeta.testDiagnostic;
-            }
-
-            refreshProductionUsage();
-            return true;
-          }
-
-          if(data.state==='failed'){
-            pendingRow.querySelector('.bubble').textContent=
-              'エラー: '+(data.error||'回答生成に失敗しました');
-            clearPending();
-            return false;
-          }
-
-          setPendingMessage(pendingRow,'返事を受け取り中');
-
-        }catch(e){
-          if(e.status===401){
-            forceLogout();
-            return false;
-          }
-
-          // Polling itself can briefly fail on mobile networks.
-          // Keep the OpenAI background job alive and try again.
-          setPendingMessage(pendingRow,'返事を受け取り中');
-        }
-      }
+      result=await pollTestResult(item,pendingRow,12);
+      if(result.done)return true;
 
       pendingRow.querySelector('.bubble').textContent=
-        '返事はまだ作成中です。ページを開き直すと、続きから受け取れます。';
+        '返事の受け取りに時間がかかっています。ページを開き直すと、続きから確認します。';
       return false;
+
     }finally{
       recovering=false;
     }
@@ -467,19 +511,14 @@
 
   async function resumePendingIfNeeded(){
     const item=loadPending();
-    if(!item || !item.openaiResponseId || !current || recovering)return;
+    if(!item || !item.requestId || !item.question || !current || recovering)return;
 
     setButtonBusy(sendButton,true,'受け取り中…','送信する');
     const pendingRow=drawMessage('ai','');
     setPendingMessage(pendingRow,'前の返事を取りにいってます');
 
     try{
-      await recoverAnswer(
-        item.openaiResponseId,
-        pendingRow,
-        item,
-        40
-      );
+      await recoverAnswer(item,pendingRow);
     }finally{
       setButtonBusy(sendButton,false,'受け取り中…','送信する');
       remaining.textContent='TEST MODE';
@@ -567,7 +606,13 @@
       const userTs=Date.now();
       drawMessage('user',text,userTs);
       addHistory('user',text,userTs);
-      savePending({requestId,question:text,createdAt:Date.now()});
+      savePending({
+        requestId,
+        question:text,
+        conversation,
+        createdAt:Date.now(),
+        testDiagnostic:''
+      });
 
       question.value='';
       setButtonBusy(sendButton,true,'考え中…','送信する');
@@ -584,27 +629,21 @@
         });
 
         if(data.httpStatus===202 || data.state==='pending'){
-          const responseId=String(data.openaiResponseId||'');
-          if(!responseId){
-            throw new Error('バックグラウンド回答IDを受け取れませんでした');
-          }
-
-          const pendingMeta={
+          const item=loadPending()||{
             requestId,
             question:text,
+            conversation,
             createdAt:Date.now(),
-            openaiResponseId:responseId,
-            testDiagnostic:data.testDiagnostic||''
+            testDiagnostic:''
           };
-          savePending(pendingMeta);
-          setPendingMessage(pendingRow,'返事を受け取り中');
 
-          await recoverAnswer(
-            responseId,
-            pendingRow,
-            pendingMeta,
-            60
-          );
+          if(data.testDiagnostic){
+            item.testDiagnostic=data.testDiagnostic;
+            savePending(item);
+          }
+
+          setPendingMessage(pendingRow,'返事を受け取り中');
+          await recoverAnswer(item,pendingRow);
           return;
         }
 
@@ -636,11 +675,15 @@
           return;
         }
 
-        pendingRow.querySelector('.bubble').textContent=
-          e.timeout
-            ? 'エラー: 回答の開始確認に時間がかかりすぎました。もう一度試してください。'
-            : 'エラー: '+(e.message||'通信に失敗しました');
-        clearPending();
+        const item=loadPending()||{
+          requestId,
+          question:text,
+          conversation,
+          createdAt:Date.now(),
+          testDiagnostic:''
+        };
+        setPendingMessage(pendingRow,'返事を受け取り中');
+        await recoverAnswer(item,pendingRow);
 
       }finally{
         setButtonBusy(sendButton,false,'考え中…','送信する');
@@ -657,10 +700,10 @@
   if(savedPass){
     current=savedPass;
     pass.value=savedPass;
-    showUnlockedState();
-    remaining.textContent='TEST MODE';
-    refreshProductionUsage();
-    resumePendingIfNeeded();
+      showUnlockedState();
+      remaining.textContent='TEST MODE';
+      refreshProductionUsage();
+      resumePendingIfNeeded();
   }else{
     showLockedState('');
   }
