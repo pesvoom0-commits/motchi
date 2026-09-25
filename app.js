@@ -89,6 +89,176 @@
     node.appendChild(dots);
   }
 
+  let copyToastTimer=null;
+
+  function showCopyToast(text='コピーしました'){
+    let toast=document.getElementById('copyToast');
+    if(!toast){
+      toast=document.createElement('div');
+      toast.id='copyToast';
+      toast.className='copy-toast';
+      toast.setAttribute('role','status');
+      toast.setAttribute('aria-live','polite');
+      document.body.appendChild(toast);
+    }
+
+    toast.textContent=text;
+    toast.classList.add('show');
+    clearTimeout(copyToastTimer);
+    copyToastTimer=setTimeout(()=>toast.classList.remove('show'),1200);
+  }
+
+  async function copyTextToClipboard(text){
+    const value=String(text||'').trim();
+    if(!value)return false;
+
+    try{
+      if(navigator.clipboard && window.isSecureContext){
+        await navigator.clipboard.writeText(value);
+        return true;
+      }
+    }catch(_){}
+
+    try{
+      const ta=document.createElement('textarea');
+      ta.value=value;
+      ta.setAttribute('readonly','');
+      ta.style.position='fixed';
+      ta.style.opacity='0';
+      ta.style.pointerEvents='none';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok=document.execCommand('copy');
+      ta.remove();
+      return ok;
+    }catch(_){
+      return false;
+    }
+  }
+
+  function installLongPressCopy(bubble){
+    if(!bubble || bubble.dataset.longPressCopy==='1')return;
+    bubble.dataset.longPressCopy='1';
+
+    let timer=null;
+    let startX=0;
+    let startY=0;
+    let armed=false;
+    let cancelled=false;
+
+    const clearTimer=()=>{
+      if(timer){
+        clearTimeout(timer);
+        timer=null;
+      }
+    };
+
+    const reset=()=>{
+      clearTimer();
+      armed=false;
+      cancelled=false;
+      bubble.classList.remove('copy-armed');
+    };
+
+    bubble.addEventListener('pointerdown',e=>{
+      if(e.pointerType==='mouse' && e.button!==0)return;
+
+      startX=e.clientX;
+      startY=e.clientY;
+      armed=false;
+      cancelled=false;
+      clearTimer();
+
+      timer=setTimeout(()=>{
+        timer=null;
+        if(cancelled)return;
+        armed=true;
+        bubble.classList.add('copy-armed');
+        if(navigator.vibrate)navigator.vibrate(14);
+      },650);
+    });
+
+    bubble.addEventListener('pointermove',e=>{
+      if(Math.abs(e.clientX-startX)>10 || Math.abs(e.clientY-startY)>10){
+        cancelled=true;
+        clearTimer();
+        armed=false;
+        bubble.classList.remove('copy-armed');
+      }
+    });
+
+    bubble.addEventListener('pointerup',async e=>{
+      clearTimer();
+
+      if(!armed || cancelled){
+        reset();
+        return;
+      }
+
+      // Clipboard access on iOS/Safari needs a real user activation.
+      // Do the write here, on pointerup, not inside setTimeout.
+      const text=String(bubble.innerText||'').trim();
+      let ok=false;
+
+      try{
+        if(navigator.clipboard && window.isSecureContext){
+          await navigator.clipboard.writeText(text);
+          ok=true;
+        }
+      }catch(_){}
+
+      if(!ok){
+        try{
+          const ta=document.createElement('textarea');
+          ta.value=text;
+          ta.style.position='fixed';
+          ta.style.left='-9999px';
+          ta.style.top='0';
+          ta.style.opacity='0';
+          ta.style.fontSize='16px';
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.setSelectionRange(0,ta.value.length);
+          ok=document.execCommand('copy');
+          ta.remove();
+        }catch(_){}
+      }
+
+      bubble.classList.remove('copy-armed');
+
+      if(ok){
+        if(navigator.vibrate)navigator.vibrate(18);
+        showCopyToast('全文コピーしました');
+      }else{
+        // Final fallback: select the entire bubble text so the user can use
+        // the native Copy command rather than showing a dead-end error.
+        try{
+          const range=document.createRange();
+          range.selectNodeContents(bubble);
+          const sel=window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          showCopyToast('全文を選択しました');
+        }catch(_){
+          showCopyToast('コピーできませんでした');
+        }
+      }
+
+      armed=false;
+      cancelled=false;
+    });
+
+    bubble.addEventListener('pointercancel',reset);
+    bubble.addEventListener('pointerleave',e=>{
+      if(e.pointerType==='mouse')reset();
+    });
+
+    bubble.addEventListener('contextmenu',e=>{
+      if(armed)e.preventDefault();
+    });
+  }
+
   function setPendingMessage(row,text){
     const bubble=row?.querySelector('.bubble');
     if(bubble)renderLoadingState(bubble,text);
@@ -149,6 +319,7 @@
 
     chat.appendChild(row);
     chat.scrollTop=chat.scrollHeight;
+    installLongPressCopy(bubble);
     return row;
   }
 
