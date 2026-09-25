@@ -323,9 +323,11 @@
     if(!base)throw new Error('まだAPI接続先が設定されていません。');
 
     const defaultTimeout =
-      (path==='/api/ask' || path==='/api/test/ask') ? 60000 :
+      path==='/api/test/ask' ? 30000 :
+      path==='/api/test/result' ? 10000 :
+      (path==='/api/ask' ? 45000 :
       path==='/api/result' ? 8000 :
-      12000;
+      12000);
 
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(),timeoutMs||defaultTimeout);
@@ -390,6 +392,7 @@
       showUnlockedState();
       remaining.textContent='TEST MODE';
       refreshProductionUsage();
+      resumePendingIfNeeded();
     }catch(e){
       if(e.status===401){
         storageRemove(PASS_KEY);
@@ -404,12 +407,83 @@
     }
   }
 
-  async function recoverAnswer(){
-    return false;
+  async function recoverAnswer(responseId,pendingRow,pendingMeta={},maxAttempts=60){
+    if(recovering)return false;
+    recovering=true;
+
+    try{
+      for(let i=0;i<maxAttempts;i++){
+        if(i>0)await sleep(1500);
+
+        try{
+          const data=await api('/api/test/result',{
+            passphrase:current,
+            responseId
+          });
+
+          if(data.state==='completed'){
+            const answer=data.answer||'返事が空っぽでした';
+            const aiTs=updateMessage(pendingRow,answer,Date.now());
+            addHistory('ai',answer,aiTs);
+            clearPending();
+
+            if(testDiagnostic){
+              testDiagnostic.textContent=pendingMeta.testDiagnostic||'';
+              testDiagnostic.hidden=!pendingMeta.testDiagnostic;
+            }
+
+            refreshProductionUsage();
+            return true;
+          }
+
+          if(data.state==='failed'){
+            pendingRow.querySelector('.bubble').textContent=
+              'エラー: '+(data.error||'回答生成に失敗しました');
+            clearPending();
+            return false;
+          }
+
+          setPendingMessage(pendingRow,'返事を受け取り中');
+
+        }catch(e){
+          if(e.status===401){
+            forceLogout();
+            return false;
+          }
+
+          // Polling itself can briefly fail on mobile networks.
+          // Keep the OpenAI background job alive and try again.
+          setPendingMessage(pendingRow,'返事を受け取り中');
+        }
+      }
+
+      pendingRow.querySelector('.bubble').textContent=
+        '返事はまだ作成中です。ページを開き直すと、続きから受け取れます。';
+      return false;
+    }finally{
+      recovering=false;
+    }
   }
 
   async function resumePendingIfNeeded(){
-    clearPending();
+    const item=loadPending();
+    if(!item || !item.openaiResponseId || !current || recovering)return;
+
+    setButtonBusy(sendButton,true,'受け取り中…','送信する');
+    const pendingRow=drawMessage('ai','');
+    setPendingMessage(pendingRow,'前の返事を取りにいってます');
+
+    try{
+      await recoverAnswer(
+        item.openaiResponseId,
+        pendingRow,
+        item,
+        40
+      );
+    }finally{
+      setButtonBusy(sendButton,false,'受け取り中…','送信する');
+      remaining.textContent='TEST MODE';
+    }
   }
 
   if(loginButton){
@@ -509,14 +583,41 @@
           conversation
         });
 
+        if(data.httpStatus===202 || data.state==='pending'){
+          const responseId=String(data.openaiResponseId||'');
+          if(!responseId){
+            throw new Error('バックグラウンド回答IDを受け取れませんでした');
+          }
+
+          const pendingMeta={
+            requestId,
+            question:text,
+            createdAt:Date.now(),
+            openaiResponseId:responseId,
+            testDiagnostic:data.testDiagnostic||''
+          };
+          savePending(pendingMeta);
+          setPendingMessage(pendingRow,'返事を受け取り中');
+
+          await recoverAnswer(
+            responseId,
+            pendingRow,
+            pendingMeta,
+            60
+          );
+          return;
+        }
+
         const answer=data.answer||'返事が空っぽでした';
         const aiTs=updateMessage(pendingRow,answer,Date.now());
         addHistory('ai',answer,aiTs);
         clearPending();
+
         if(testDiagnostic){
           testDiagnostic.textContent=data.testDiagnostic||'';
           testDiagnostic.hidden=!data.testDiagnostic;
         }
+
         refreshProductionUsage();
 
       }catch(e){
@@ -537,7 +638,7 @@
 
         pendingRow.querySelector('.bubble').textContent=
           e.timeout
-            ? 'エラー: 回答に時間がかかりすぎました。もう一度試してください。'
+            ? 'エラー: 回答の開始確認に時間がかかりすぎました。もう一度試してください。'
             : 'エラー: '+(e.message||'通信に失敗しました');
         clearPending();
 
@@ -559,6 +660,7 @@
     showUnlockedState();
     remaining.textContent='TEST MODE';
     refreshProductionUsage();
+    resumePendingIfNeeded();
   }else{
     showLockedState('');
   }
