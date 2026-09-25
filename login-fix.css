@@ -291,3 +291,33 @@ textarea,
   transform:scale(.995);
   opacity:.94;
 }
+
+
+/* v17.2.1: wider message bubbles for mobile readability */
+.message{
+  width:100%;
+}
+
+.message-body{
+  flex:1 1 0;
+  min-width:0;
+  width:auto;
+  max-width:none;
+}
+
+.message .bubble{
+  width:100%;
+  max-width:none;
+  box-sizing:border-box;
+  font-size:15px;
+  line-height:1.7;
+}
+
+/* Keep timestamps aligned with the full-width bubble. */
+.message.ai .message-meta{
+  align-self:flex-start;
+}
+
+.message.user .message-meta{
+  align-self:flex-end;
+}
