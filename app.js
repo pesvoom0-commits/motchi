@@ -66,6 +66,34 @@
     return html;
   }
 
+  function renderLoadingState(node,text){
+    if(!node)return;
+
+    const label=String(text||'')
+      .replace(/[.…]+$/,'')
+      .trim();
+
+    node.textContent=label;
+    node.setAttribute('aria-label',label+'…');
+
+    const dots=document.createElement('span');
+    dots.className='loading-dots';
+    dots.setAttribute('aria-hidden','true');
+
+    for(let i=0;i<3;i++){
+      const dot=document.createElement('span');
+      dot.textContent='.';
+      dots.appendChild(dot);
+    }
+
+    node.appendChild(dots);
+  }
+
+  function setPendingMessage(row,text){
+    const bubble=row?.querySelector('.bubble');
+    if(bubble)renderLoadingState(bubble,text);
+  }
+
   function formatMessageTime(ts){
     if(!ts)return '';
     const d=new Date(ts);
@@ -127,7 +155,10 @@
   function updateMessage(row,text,ts=Date.now()){
     const bubble=row?.querySelector('.bubble');
     const meta=row?.querySelector('.message-meta');
-    if(bubble)bubble.innerHTML=renderAiText(text);
+    if(bubble){
+      bubble.innerHTML=renderAiText(text);
+      bubble.removeAttribute('aria-label');
+    }
     if(meta){
       meta.textContent=formatMessageTime(ts);
       meta.hidden=!meta.textContent;
@@ -197,7 +228,14 @@
   function setButtonBusy(button,busy,busyText,normalText){
     if(!button)return;
     button.disabled=busy;
-    button.textContent=busy ? busyText : normalText;
+
+    if(busy){
+      renderLoadingState(button,busyText);
+    }else{
+      button.textContent=normalText;
+      button.removeAttribute('aria-label');
+    }
+
     button.setAttribute('aria-busy',busy ? 'true' : 'false');
   }
 
@@ -394,7 +432,7 @@
             break;
           }
 
-          pendingRow.querySelector('.bubble').textContent='返事を受け取り中…';
+          setPendingMessage(pendingRow,'返事を受け取り中');
         }catch(e){
           if(e.status===401){
             forceLogout();
@@ -415,7 +453,8 @@
     if(!item || !current || recovering)return;
 
     setButtonBusy(sendButton,true,'受け取り中…','送信する');
-    const pendingRow=drawMessage('ai','前の返事を取りにいってます…');
+    const pendingRow=drawMessage('ai','');
+    setPendingMessage(pendingRow,'前の返事を取りにいってます');
 
     try{
       await recoverAnswer(item.requestId,pendingRow,12);
@@ -461,7 +500,8 @@
       question.value='';
       setButtonBusy(sendButton,true,'考え中…','送信する');
 
-      const pendingRow=drawMessage('ai','考えちゅう…');
+      const pendingRow=drawMessage('ai','');
+      setPendingMessage(pendingRow,'考えちゅう');
 
       try{
         const data=await api('/api/ask',{
@@ -474,7 +514,7 @@
         if(Number.isFinite(data.remaining))setRemaining(data.remaining);
 
         if(data.httpStatus===202 || data.state==='pending'){
-          pendingRow.querySelector('.bubble').textContent='返事を受け取り中…';
+          setPendingMessage(pendingRow,'返事を受け取り中');
           await recoverAnswer(requestId,pendingRow);
           return;
         }
@@ -500,7 +540,7 @@
           return;
         }
 
-        pendingRow.querySelector('.bubble').textContent='返事を受け取り中…';
+        setPendingMessage(pendingRow,'返事を受け取り中');
         await recoverAnswer(requestId,pendingRow);
 
       }finally{

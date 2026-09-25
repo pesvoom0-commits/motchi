@@ -70,6 +70,34 @@
     return html;
   }
 
+  function renderLoadingState(node,text){
+    if(!node)return;
+
+    const label=String(text||'')
+      .replace(/[.…]+$/,'')
+      .trim();
+
+    node.textContent=label;
+    node.setAttribute('aria-label',label+'…');
+
+    const dots=document.createElement('span');
+    dots.className='loading-dots';
+    dots.setAttribute('aria-hidden','true');
+
+    for(let i=0;i<3;i++){
+      const dot=document.createElement('span');
+      dot.textContent='.';
+      dots.appendChild(dot);
+    }
+
+    node.appendChild(dots);
+  }
+
+  function setPendingMessage(row,text){
+    const bubble=row?.querySelector('.bubble');
+    if(bubble)renderLoadingState(bubble,text);
+  }
+
   function formatMessageTime(ts){
     if(!ts)return '';
     const d=new Date(ts);
@@ -131,7 +159,10 @@
   function updateMessage(row,text,ts=Date.now()){
     const bubble=row?.querySelector('.bubble');
     const meta=row?.querySelector('.message-meta');
-    if(bubble)bubble.innerHTML=renderAiText(text);
+    if(bubble){
+      bubble.innerHTML=renderAiText(text);
+      bubble.removeAttribute('aria-label');
+    }
     if(meta){
       meta.textContent=formatMessageTime(ts);
       meta.hidden=!meta.textContent;
@@ -201,7 +232,14 @@
   function setButtonBusy(button,busy,busyText,normalText){
     if(!button)return;
     button.disabled=busy;
-    button.textContent=busy ? busyText : normalText;
+
+    if(busy){
+      renderLoadingState(button,busyText);
+    }else{
+      button.textContent=normalText;
+      button.removeAttribute('aria-label');
+    }
+
     button.setAttribute('aria-busy',busy ? 'true' : 'false');
   }
 
@@ -285,7 +323,7 @@
     if(!base)throw new Error('まだAPI接続先が設定されていません。');
 
     const defaultTimeout =
-      path==='/api/ask' ? 45000 :
+      (path==='/api/ask' || path==='/api/test/ask') ? 60000 :
       path==='/api/result' ? 8000 :
       12000;
 
@@ -460,7 +498,8 @@
       question.value='';
       setButtonBusy(sendButton,true,'考え中…','送信する');
 
-      const pendingRow=drawMessage('ai','考えちゅう…');
+      const pendingRow=drawMessage('ai','');
+      setPendingMessage(pendingRow,'考えちゅう');
 
       try{
         const data=await api('/api/test/ask',{
@@ -496,8 +535,11 @@
           return;
         }
 
-        pendingRow.querySelector('.bubble').textContent='返事を受け取り中…';
-        await recoverAnswer(requestId,pendingRow);
+        pendingRow.querySelector('.bubble').textContent=
+          e.timeout
+            ? 'エラー: 回答に時間がかかりすぎました。もう一度試してください。'
+            : 'エラー: '+(e.message||'通信に失敗しました');
+        clearPending();
 
       }finally{
         setButtonBusy(sendButton,false,'考え中…','送信する');
