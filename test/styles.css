@@ -117,7 +117,7 @@ button{cursor:pointer}
 .detail-block{border-top:1px solid var(--line);padding-top:14px;margin-top:14px}.detail-block h3{font-size:14px;margin:0 0 8px}
 .login{position:fixed;inset:0;z-index:500;display:grid;place-items:center;background:#f4f0e8;padding:24px}
 .login-box{width:min(100%,360px);text-align:center}
-.login-mark{width:56px;height:56px;margin:0 auto 14px;border:2px solid #222;border-radius:16px;display:grid;place-items:center;font-weight:900;font-size:24px;background:#fff}
+.login-mark{width:auto;height:auto;margin:0 auto 14px;border:0;border-radius:0;display:block;font-weight:800;font-size:24px;line-height:1.35;background:transparent}
 .login-box h2{margin:0 0 6px}.login-box p{margin:0 0 14px;color:#888;font-size:13px}
 .login-box input{width:100%;height:48px;border:1px solid #d9d6d0;border-radius:12px;background:#fff;font-size:16px;padding:0 12px;margin-bottom:10px}
 .login-box button{width:100%;height:48px;border:0;border-radius:12px;background:#222;color:#fff;font-weight:700;font-size:16px}

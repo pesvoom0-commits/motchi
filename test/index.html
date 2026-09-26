@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="theme-color" content="#fbfaf7">
   <title>もっちをのぞく TEST</title>
-  <link rel="stylesheet" href="./styles.css?v=20260927-0154">
+  <link rel="stylesheet" href="./styles.css?v=20260927-0616">
 </head>
 <body>
   <main id="app" class="app-shell" hidden>
@@ -15,14 +15,14 @@
         <button id="titleButton" class="site-title" type="button" aria-label="現在の会話へ戻る">もっちをのぞく</button>
         <div class="search-field" role="search" aria-label="会話を検索">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.3-4.3m2.3-5.2a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/></svg>
-          <input id="searchInput" type="text" inputmode="search" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="メッセージを検索…">
+          <input id="searchInput" type="text" inputmode="search" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="検索">
         </div>
-        <button id="archiveButton" class="icon-button" type="button" aria-label="思い出アーカイブ">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h16v12H4zM7 4.5h10l1 3H6l1-3Zm3 6h4"/></svg>
+        <button id="archiveButton" class="icon-button" type="button" aria-label="アーカイブ">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6h6l2 2h9v10h-17z"/></svg>
         </button>
         <button id="adminButton" class="admin-button" type="button">ADMIN</button>
       </div>
-      <div class="header-meta">ver 2.1.15 TEST · updated 2026/09/27</div>
+      <div class="header-meta">ver 2.1.16 TEST · updated 2026/09/27</div>
     </header>
 
     <section id="chatView" class="view chat-view">
@@ -31,7 +31,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 9 5.5 5.5L17.5 9"/></svg>
       </button>
       <form id="askForm" class="composer">
-        <textarea id="question" rows="1" maxlength="2000" placeholder="メッセージを入力…" enterkeyhint="send"></textarea>
+        <textarea id="question" rows="1" maxlength="2000" placeholder="のぞきたいことを書いてください" enterkeyhint="send"></textarea>
         <button id="sendButton" class="send-button" type="submit" aria-label="送信">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 12 16-8-5 16-3-6-8-2Zm8 2 8-10"/></svg>
         </button>
@@ -45,12 +45,12 @@
 
     <section id="archiveListView" class="view archive-list-view" hidden>
       <div class="view-heading">
-        <h1>思い出アーカイブ</h1>
-        <p>これまでの会話を、その頃の画面ごと残しています。</p>
+        <h1>アーカイブ</h1>
+        <p>いままでのぞき見した記録</p>
       </div>
       <div id="archiveCards" class="archive-cards"></div>
       <div class="archive-list-return-wrap">
-        <button id="returnCurrentFromListButton" class="return-current" type="button">現在の会話へ</button>
+        <button id="returnCurrentFromListButton" class="return-current" type="button">最新版に戻る</button>
       </div>
     </section>
 
@@ -66,7 +66,7 @@
         </section>
       </div>
       <div class="archive-return-wrap">
-        <button id="returnCurrentButton" class="return-current" type="button">現在の会話へ</button>
+        <button id="returnCurrentButton" class="return-current" type="button">最新版に戻る</button>
       </div>
     </section>
   </main>
@@ -134,11 +134,11 @@
 
   <div id="login" class="login" hidden>
     <div class="login-box">
-      <div class="login-mark">弟</div>
+      <div class="login-mark">もっちをのぞく</div>
       <h2>あいことば</h2>
       <p>テスト版をひらきます。</p>
       <input id="passphrase" type="password" autocomplete="current-password" enterkeyhint="go">
-      <button id="loginButton" type="button">ひらく</button>
+      <button id="loginButton" type="button">のぞきにいく</button>
       <div id="loginError" class="error"></div>
     </div>
   </div>
@@ -146,6 +146,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="./config.js?v=20260923-2345"></script>
-  <script src="./app.js?v=20260927-0615"></script>
+  <script src="./app.js?v=20260927-0616"></script>
 </body>
 </html>

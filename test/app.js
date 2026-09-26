@@ -169,7 +169,7 @@
 
   function restoreChat(){
     chat.innerHTML='';
-    drawMessage({kind:'ai',text:'美砂さん、なんでも聞いてください。',ts:null},-1,chat,false);
+    drawMessage({kind:'ai',text:'さて、なにをのぞきにいきましょうか？',ts:null},-1,chat,false);
     history.forEach((item,index)=>drawMessage(item,index,chat,false));
     requestAnimationFrame(()=>{window.scrollTo({top:pageBottom(),behavior:'auto'});updateJumpLatestVisibility()});
   }
