@@ -247,7 +247,7 @@
   }
 
   function archiveDefinitions(){
-    return [{id:'v1',label:'v1',period:'〜 2026.09',name:'前の弟子チャッピー',description:'v2へ切り替わる前の画面と、その頃の会話。'}];
+    return [{id:'v1',label:'v1',period:'〜 2026.09',name:'旧バージョン',description:'v2へ切り替わる前の画面と、その頃の会話。'}];
   }
 
   function renderArchiveCards(){
@@ -311,7 +311,7 @@
     const ctx=canvas.getContext('2d'); ctx.font='34px -apple-system, BlinkMacSystemFont, sans-serif';
     const lines=wrapLines(ctx,item.text,860); canvas.height=Math.max(360,150+lines.length*54);
     ctx.fillStyle='#fbfaf7';ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle='#111';ctx.font='700 32px -apple-system, BlinkMacSystemFont, sans-serif';ctx.fillText(item.kind==='user'?'美砂':'弟子チャッピー',90,78);
+    ctx.fillStyle='#111';ctx.font='700 32px -apple-system, BlinkMacSystemFont, sans-serif';ctx.fillText(item.kind==='user'?'美砂':'ぼく',90,78);
     ctx.font='34px -apple-system, BlinkMacSystemFont, sans-serif';ctx.fillStyle='#222';
     lines.forEach((line,i)=>ctx.fillText(line,90,145+i*54));
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
