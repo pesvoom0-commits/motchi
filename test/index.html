@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="theme-color" content="#fbfaf7">
   <title>弟子チャッピー TEST</title>
-  <link rel="stylesheet" href="./styles.css?v=20260926-2225">
+  <link rel="stylesheet" href="./styles.css?v=20260927-0154">
 </head>
 <body>
   <main id="app" class="app-shell" hidden>
@@ -22,11 +22,14 @@
         </button>
         <button id="adminButton" class="admin-button" type="button">ADMIN</button>
       </div>
-      <div class="header-meta">ver 2.0.1 TEST · updated 2026/09/27</div>
+      <div class="header-meta">ver 2.1.1 TEST · updated 2026/09/27</div>
     </header>
 
     <section id="chatView" class="view chat-view">
       <div id="chat" class="chat" aria-live="polite"></div>
+      <button id="jumpLatestButton" class="jump-latest" type="button" aria-label="最新のメッセージへ" title="最新のメッセージへ" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 9 5.5 5.5L17.5 9"/></svg>
+      </button>
       <form id="askForm" class="composer">
         <textarea id="question" rows="1" maxlength="2000" placeholder="メッセージを入力…" enterkeyhint="send"></textarea>
         <button id="sendButton" class="send-button" type="submit" aria-label="送信">
@@ -141,7 +144,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="./config.js?v=20260923-2345"></script>
-  <script src="./v2-behavior.js?v=20260927-0043"></script>
-  <script src="./app.js?v=20260926-2225"></script>
+  <script src="./app.js?v=20260927-0154"></script>
 </body>
 </html>

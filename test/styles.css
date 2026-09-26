@@ -125,5 +125,34 @@ button{cursor:pointer}
 .toast{position:fixed;z-index:600;left:50%;bottom:max(22px,calc(18px + var(--safe-bottom)));transform:translate(-50%,10px);background:rgba(25,25,25,.92);color:#fff;border-radius:999px;padding:9px 13px;font-size:13px;opacity:0;pointer-events:none;transition:.16s ease;white-space:nowrap}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .loading-dots{display:inline-flex;gap:.12em;margin-left:.1em}.loading-dots span{animation:dot 1s infinite ease-in-out;opacity:.3}.loading-dots span:nth-child(2){animation-delay:.13s}.loading-dots span:nth-child(3){animation-delay:.26s}@keyframes dot{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-2px)}}
+
+.jump-latest{
+  position:fixed;
+  z-index:29;
+  right:max(16px,calc((100vw - 540px)/2 + 16px));
+  bottom:calc(76px + var(--safe-bottom));
+  width:40px;
+  height:40px;
+  border:1px solid #deded9;
+  border-radius:50%;
+  background:rgba(255,255,255,.97);
+  color:#4b4b48;
+  display:grid;
+  place-items:center;
+  padding:0;
+  box-shadow:0 3px 12px rgba(0,0,0,.12);
+  -webkit-tap-highlight-color:transparent;
+}
+.jump-latest svg{
+  width:22px;
+  height:22px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.jump-latest:active{transform:translateY(1px)}
+
 @media (max-width:390px){.header-row{grid-template-columns:auto minmax(70px,1fr) 36px auto;gap:6px}.site-title{font-size:14px}.admin-button{padding:0 6px;font-size:10px}.search-field{padding:0 8px}.search-field input{font-size:15px}}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}.toast{transition:none}.loading-dots span{animation:none}}

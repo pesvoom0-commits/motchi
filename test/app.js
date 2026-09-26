@@ -34,6 +34,7 @@
   const form=$('askForm');
   const question=$('question');
   const sendButton=$('sendButton');
+  const jumpLatestButton=$('jumpLatestButton');
   const adminBackdrop=$('adminBackdrop');
   const adminClose=$('adminClose');
   const modelLuna=$('modelLuna');
@@ -119,6 +120,27 @@
   }
   function avatarSrc(kind){return kind==='user'?'./misa-icon.jpg':'./chatgpt-icon.svg'}
 
+  function pageBottom(){
+    return Math.max(
+      document.body?.scrollHeight||0,
+      document.documentElement?.scrollHeight||0
+    );
+  }
+  function distanceFromBottom(){
+    return Math.max(0,pageBottom()-(window.scrollY+window.innerHeight));
+  }
+  function updateJumpLatestVisibility(){
+    if(!jumpLatestButton)return;
+    const shouldShow=!chatView.hidden&&distanceFromBottom()>180;
+    jumpLatestButton.hidden=!shouldShow;
+  }
+  function jumpToLatest(){
+    if(!jumpLatestButton)return;
+    jumpLatestButton.hidden=true;
+    const reduce=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    window.scrollTo({top:pageBottom(),behavior:reduce?'auto':'smooth'});
+  }
+
   function drawMessage(item,index,container=chat,legacy=false){
     const row=document.createElement('div');
     row.dataset.messageIndex=String(index);
@@ -140,7 +162,7 @@
     chat.innerHTML='';
     drawMessage({kind:'ai',text:'美砂さん、なんでも聞いてください。',ts:null},-1,chat,false);
     history.forEach((item,index)=>drawMessage(item,index,chat,false));
-    requestAnimationFrame(()=>window.scrollTo({top:document.body.scrollHeight,behavior:'auto'}));
+    requestAnimationFrame(()=>{window.scrollTo({top:pageBottom(),behavior:'auto'});updateJumpLatestVisibility()});
   }
 
   function updateMessage(row,text,details){
@@ -151,6 +173,7 @@
     if(Number.isInteger(index)&&index>=0&&history[index]){
       history[index]={...history[index],text,ts,details}; saveHistory();
     }
+    requestAnimationFrame(updateJumpLatestVisibility);
   }
 
   function renderLoading(row,label){
@@ -159,6 +182,7 @@
     const dots=document.createElement('span'); dots.className='loading-dots';
     for(let i=0;i<3;i++){const s=document.createElement('span');s.textContent='.';dots.appendChild(s)}
     bubble.appendChild(dots);
+    requestAnimationFrame(updateJumpLatestVisibility);
   }
 
   function showView(name){
@@ -170,6 +194,7 @@
     archiveView.hidden=!isArchive;
     if(name!=='search'&&document.activeElement===searchInput)searchInput.blur();
     window.scrollTo({top:0,behavior:'auto'});
+    requestAnimationFrame(updateJumpLatestVisibility);
   }
 
   function openCurrent(){
@@ -425,7 +450,16 @@
   question.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&e.isComposing===false){e.preventDefault();form.requestSubmit()}});
   function autoGrow(){question.style.height='auto';question.style.height=Math.min(question.scrollHeight,120)+'px'}
 
+  jumpLatestButton?.addEventListener('click',jumpToLatest);
+  window.addEventListener('scroll',updateJumpLatestVisibility,{passive:true});
+  window.addEventListener('resize',updateJumpLatestVisibility,{passive:true});
+
   loginButton.addEventListener('click',unlock); pass.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();unlock()}});
+
+  if(window.MutationObserver&&chat){
+    const latestObserver=new MutationObserver(()=>requestAnimationFrame(updateJumpLatestVisibility));
+    latestObserver.observe(chat,{childList:true,subtree:true,characterData:true});
+  }
 
   renderArchiveCards(); setModel(model);
   const saved=storageGet(PASS_KEY);
