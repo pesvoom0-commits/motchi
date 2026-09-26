@@ -71,6 +71,10 @@
   let searchLastStableY=0;
   let searchCommitRestoring=false;
   let searchCommitTimers=[];
+  let searchCompositionActive=false;
+  let searchCommitPending=false;
+  let searchLastQuery='';
+  let searchLastInputType='';
 
   function $(id){return document.getElementById(id)}
   function storageGet(key){try{return localStorage.getItem(key)||''}catch(_){return ''}}
@@ -203,7 +207,7 @@
   }
 
   function openCurrent(){
-    searchInput.value=''; showView('chat'); restoreChat();
+    searchLastQuery=''; searchCommitPending=false; searchInput.value=''; showView('chat'); restoreChat();
   }
 
   function excerpt(text,query,max=40){
@@ -235,10 +239,10 @@
 
   function jumpToSearchResult(result){
     if(result.source==='current'){
-      searchInput.value=''; showView('chat'); restoreChat();
+      searchLastQuery=''; searchCommitPending=false; searchInput.value=''; showView('chat'); restoreChat();
       requestAnimationFrame(()=>document.querySelector(`.message[data-message-index="${result.index}"]`)?.scrollIntoView({block:'center'}));
     }else{
-      searchInput.value=''; location.href=`./archive/v1/?message=${encodeURIComponent(result.index)}`;
+      searchLastQuery=''; searchCommitPending=false; searchInput.value=''; location.href=`./archive/v1/?message=${encodeURIComponent(result.index)}`;
     }
   }
 
@@ -531,48 +535,128 @@
     }
   }
 
+  function keepSearchSession(query,{render=true}={}){
+    const q=String(query||'').trim();
+    if(!q)return false;
+    searchLastQuery=q;
+    if(searchInput.value.trim()!==q)searchInput.value=q;
+    if(searchView.hidden)showView('search');
+    if(render)renderSearch(q);
+    return true;
+  }
+
   function commitSearchWithoutChangingResults(){
-    const q=searchInput.value.trim();
+    const q=searchInput.value.trim()||searchLastQuery;
     if(!q)return;
 
-    // Results were already produced by the input event.
-    // "確定" must not run renderSearch(), activate a result, or switch views.
+    keepSearchSession(q,{render:false});
     const y=searchLastStableY||window.scrollY;
 
-    // Dismiss the keyboard after the key event has been cancelled.
-    // iOS may change page scroll while the visual viewport grows back;
-    // restore the exact pre-commit result-list position repeatedly.
     setTimeout(()=>{
+      // iOS日本語IMEの「確定/✓」後に一瞬valueが空になる場合でも
+      // 最後に成立していた検索語と検索画面を維持する。
+      keepSearchSession(searchInput.value.trim()||searchLastQuery,{render:true});
       searchInput.blur();
       restoreSearchScroll(y);
+      searchCommitPending=false;
     },0);
   }
 
-  searchInput.addEventListener('input',()=>{
-    const q=searchInput.value;
-    if(q.trim()){
+  searchInput.addEventListener('beforeinput',e=>{
+    searchLastInputType=String(e.inputType||'');
+  });
+
+  searchInput.addEventListener('compositionstart',()=>{
+    searchCompositionActive=true;
+    searchCommitPending=false;
+  });
+
+  searchInput.addEventListener('compositionend',e=>{
+    searchCompositionActive=false;
+
+    const committed=
+      searchInput.value.trim()||
+      String(e.data||'').trim()||
+      searchLastQuery;
+
+    if(committed){
+      keepSearchSession(committed,{render:true});
+      requestAnimationFrame(rememberSearchScroll);
+    }
+
+    // 日本語IMEでは「確定/✓」のkeydown時点では isComposing=true のことがある。
+    // その場合はcompositionend後に初めてキーボードを閉じる。
+    if(searchCommitPending){
+      setTimeout(()=>commitSearchWithoutChangingResults(),0);
+    }
+
+    searchLastInputType='';
+  });
+
+  searchInput.addEventListener('input',e=>{
+    const q=searchInput.value.trim();
+    const compositionLike=
+      searchCompositionActive||
+      e.isComposing||
+      /composition/i.test(searchLastInputType);
+
+    if(q){
+      searchLastQuery=q;
       if(searchView.hidden)showView('search');
       renderSearch(q);
       requestAnimationFrame(rememberSearchScroll);
     }else if(!searchView.hidden){
-      showView('chat');
+      if(compositionLike||searchCommitPending){
+        // IME確定中の一時的な空文字を「検索クリア」と誤認しない。
+        requestAnimationFrame(()=>{
+          if(searchView.hidden)return;
+          if(!searchInput.value.trim()&&searchLastQuery){
+            searchInput.value=searchLastQuery;
+            renderSearch(searchLastQuery);
+          }
+        });
+      }else{
+        // ユーザーがBackspace/Cut等で本当に空にした場合だけ検索を終了。
+        searchLastQuery='';
+        showView('chat');
+      }
     }
+
+    if(!compositionLike)searchLastInputType='';
   });
 
   searchInput.addEventListener('focus',()=>{
-    const q=searchInput.value.trim();
-    if(q&&searchView.hidden){
-      showView('search');
-      renderSearch(q);
+    const q=searchInput.value.trim()||searchLastQuery;
+    if(q){
+      keepSearchSession(q,{render:true});
     }
     requestAnimationFrame(rememberSearchScroll);
   });
 
-  // No form exists anymore, so Enter/完了/✓ has nothing to submit.
-  // Cancel the key and preserve the current dynamic results exactly as-is.
+  searchInput.addEventListener('blur',()=>{
+    // 検索画面が表示中なら、キーボードを閉じても検索状態は維持する。
+    // title/archive等で明示的に画面遷移した場合は searchView.hidden=true なので何もしない。
+    if(searchView.hidden)return;
+    const q=searchInput.value.trim()||searchLastQuery;
+    if(q){
+      keepSearchSession(q,{render:true});
+      requestAnimationFrame(()=>restoreSearchScroll(searchLastStableY||window.scrollY));
+    }
+    searchCommitPending=false;
+  });
+
   searchInput.addEventListener('keydown',e=>{
     const isEnter=e.key==='Enter'||e.keyCode===13;
-    if(!isEnter||e.isComposing)return;
+    if(!isEnter)return;
+
+    // keyCode 229 / isComposing は日本語IMEの変換確定。
+    // preventDefaultすると確定文字そのものを失うことがあるため、ここでは確定を通す。
+    if(e.isComposing||searchCompositionActive||e.keyCode===229){
+      searchCommitPending=true;
+      e.stopPropagation();
+      return;
+    }
+
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation?.();
@@ -581,16 +665,14 @@
 
   searchInput.addEventListener('keyup',e=>{
     const isEnter=e.key==='Enter'||e.keyCode===13;
-    if(!isEnter||e.isComposing)return;
+    if(!isEnter)return;
+    if(e.isComposing||searchCompositionActive||e.keyCode===229)return;
     e.preventDefault();
     e.stopPropagation();
   },true);
 
-  // Track where the user actually is in the result list.
   window.addEventListener('scroll',rememberSearchScroll,{passive:true});
 
-  // On iPhone the visual viewport changes several times while the keyboard closes.
-  // Keep restoring the pre-commit position during that transition.
   window.visualViewport?.addEventListener('resize',()=>{
     if(searchCommitRestoring&&!searchView.hidden){
       const y=searchLastStableY;
@@ -599,7 +681,7 @@
   },{passive:true});
 
   titleButton.addEventListener('click',openCurrent);
-  archiveButton.addEventListener('click',()=>{searchInput.value='';renderArchiveCards();showView('archives')});
+  archiveButton.addEventListener('click',()=>{searchLastQuery='';searchCommitPending=false;searchInput.value='';renderArchiveCards();showView('archives')});
   returnCurrentButton.addEventListener('click',openCurrent);
   returnCurrentFromListButton?.addEventListener('click',openCurrent);
   adminButton.addEventListener('click',()=>{refreshProductionUsage();adminBackdrop.hidden=false});
