@@ -44,8 +44,13 @@ button{cursor:pointer}
 .message-meta,.header-meta{font-size:10px;color:#9b9b97;line-height:1.2}
 .message-meta{margin-top:4px}
 .header-meta{text-align:right;margin-top:5px;white-space:nowrap}
+.header-meta-row{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:5px}
+.header-meta-row .header-meta{margin-top:0}
+.header-lock{appearance:none;border:0;background:none;padding:0;color:#777;font-size:10px;line-height:1.2;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
 .composer{position:fixed;z-index:28;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,540px);display:flex;align-items:flex-end;gap:8px;padding:10px 12px calc(10px + var(--safe-bottom));background:rgba(255,255,255,.97);backdrop-filter:blur(14px);border-top:1px solid var(--line)}
 .composer textarea{flex:1;resize:none;max-height:120px;min-height:42px;border:1px solid #e4e4e1;border-radius:21px;padding:10px 14px;background:#fafaf8;color:var(--text);font-size:16px;line-height:1.35;outline:none;overflow:auto}
+.composer-side{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;flex:0 0 48px}
+.remaining-display{font-size:10px;line-height:1.1;color:#8f8f8a;white-space:nowrap}
 .send-button{width:42px;height:42px;border:0;border-radius:50%;background:#1f2022;color:white;display:grid;place-items:center;flex:0 0 42px}
 .send-button svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .send-button:disabled{opacity:.38}
