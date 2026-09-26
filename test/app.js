@@ -84,6 +84,11 @@
     const d=new Date(ts); if(Number.isNaN(d.getTime()))return '';
     return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   }
+  function formatDateTime(ts){
+    if(!ts)return '';
+    const d=new Date(ts); if(Number.isNaN(d.getTime()))return '';
+    return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
   function formatDate(ts){
     if(!ts)return '';
     const d=new Date(ts); if(Number.isNaN(d.getTime()))return '';
@@ -123,7 +128,7 @@
     const body=document.createElement('div'); body.className=legacy?'legacy-body':'message-body';
     const bubble=document.createElement('div'); bubble.className=legacy?'legacy-bubble':'bubble';
     if(item.kind==='ai')bubble.innerHTML=renderAiText(item.text); else bubble.textContent=item.text;
-    const meta=document.createElement('div'); meta.className=legacy?'legacy-meta':'message-meta'; meta.textContent=formatTime(item.ts); if(!meta.textContent)meta.hidden=true;
+    const meta=document.createElement('div'); meta.className=legacy?'legacy-meta':'message-meta'; meta.textContent=legacy?formatTime(item.ts):formatDateTime(item.ts); if(!meta.textContent)meta.hidden=true;
     body.append(bubble,meta);
     if(item.kind==='user')row.append(body,avatar); else row.append(avatar,body);
     container.appendChild(row);
@@ -142,7 +147,7 @@
     const index=Number(row.dataset.messageIndex);
     const bubble=row.querySelector('.bubble'); const meta=row.querySelector('.message-meta');
     if(bubble){bubble.innerHTML=renderAiText(text)}
-    const ts=Date.now(); if(meta){meta.textContent=formatTime(ts);meta.hidden=false}
+    const ts=Date.now(); if(meta){meta.textContent=formatDateTime(ts);meta.hidden=false}
     if(Number.isInteger(index)&&index>=0&&history[index]){
       history[index]={...history[index],text,ts,details}; saveHistory();
     }
