@@ -35,6 +35,7 @@
   const form=$('askForm');
   const question=$('question');
   const sendButton=$('sendButton');
+  const remainingDisplay=$('remainingDisplay');
   const jumpLatestButton=$('jumpLatestButton');
   const adminBackdrop=$('adminBackdrop');
   const adminClose=$('adminClose');
@@ -88,6 +89,11 @@
   backupLegacyHistoryOnce();
   function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
   function clamp(n,min,max){return Math.max(min,Math.min(max,n))}
+  function setVisibleRemaining(value){
+    if(!remainingDisplay)return;
+    const n=Number(value);
+    remainingDisplay.textContent=Number.isFinite(n)?`残り${n}回`:'残り—回';
+  }
 
   function escapeHtml(text){
     return String(text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
@@ -423,8 +429,9 @@
         used:Number.isFinite(Number(data.used))?Number(data.used):null
       };
       productionRemaining.textContent=Number.isFinite(productionUsage.remaining)?productionUsage.remaining:'—';
+      setVisibleRemaining(productionUsage.remaining);
       remainingInput.max=String(productionUsage.limit||20); remainingInput.value=Number.isFinite(productionUsage.remaining)?String(productionUsage.remaining):'';
-    }catch(_){productionRemaining.textContent='—'}
+    }catch(_){productionRemaining.textContent='—';setVisibleRemaining(null)}
   }
 
   async function saveProductionRemaining(){
@@ -452,6 +459,12 @@
   function completeAnswer(row,pending,data){
     const responseMs=Date.now()-pending.startedAt;
     const details={requestId:pending.requestId,responseMs,model:pending.model||model,testDiagnostic:data.testDiagnostic||pending.testDiagnostic||'',request:pending.request||{}};
+    const remaining=Number(data.remaining);
+    if(Number.isFinite(remaining)){
+      productionUsage.remaining=remaining;
+      productionRemaining.textContent=String(remaining);
+      setVisibleRemaining(remaining);
+    }
     const answer=data.answer||'返事が空っぽでした'; updateMessage(row,answer,details); clearPending(); lastSync.textContent=new Date().toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}); return true;
   }
 
