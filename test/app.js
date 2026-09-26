@@ -30,6 +30,7 @@
   const archiveCards=$('archiveCards');
   const archiveChat=$('archiveChat');
   const returnCurrentButton=$('returnCurrentButton');
+  const returnCurrentFromListButton=$('returnCurrentFromListButton');
   const form=$('askForm');
   const question=$('question');
   const sendButton=$('sendButton');
@@ -118,7 +119,7 @@
     row.dataset.messageIndex=String(index);
     row.dataset.kind=item.kind;
     row.className=legacy?`legacy-message ${item.kind}`:`message ${item.kind}`;
-    const avatar=document.createElement('img'); avatar.src=avatarSrc(item.kind); avatar.alt='';
+    const avatar=document.createElement('img'); avatar.src=avatarSrc(item.kind); avatar.alt=''; avatar.className=legacy?'legacy-avatar':'message-avatar';
     const body=document.createElement('div'); body.className=legacy?'legacy-body':'message-body';
     const bubble=document.createElement('div'); bubble.className=legacy?'legacy-bubble':'bubble';
     if(item.kind==='ai')bubble.innerHTML=renderAiText(item.text); else bubble.textContent=item.text;
@@ -395,6 +396,7 @@
   titleButton.addEventListener('click',openCurrent);
   archiveButton.addEventListener('click',()=>{searchInput.value='';renderArchiveCards();showView('archives')});
   returnCurrentButton.addEventListener('click',openCurrent);
+  returnCurrentFromListButton?.addEventListener('click',openCurrent);
   adminButton.addEventListener('click',()=>{refreshProductionUsage();adminBackdrop.hidden=false});
   adminClose.addEventListener('click',()=>adminBackdrop.hidden=true);
   adminBackdrop.addEventListener('click',e=>{if(e.target===adminBackdrop)adminBackdrop.hidden=true});
