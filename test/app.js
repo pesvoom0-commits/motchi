@@ -55,6 +55,7 @@
   const detailBackdrop=$('detailBackdrop');
   const detailClose=$('detailClose');
   const detailMeta=$('detailMeta');
+  const detailCopyButton=$('detailCopyButton');
   const detailDiagnostic=$('detailDiagnostic');
   const detailRequest=$('detailRequest');
   const toast=$('toast');
@@ -324,6 +325,42 @@
     detailBackdrop.hidden=false;
   }
 
+  function buildDetailCopyText(){
+    const item=selectedMessage?.item;
+    if(!item)return '';
+    const d=item.details||{};
+    return [
+      '返答詳細',
+      `応答時間: ${d.responseMs?`${d.responseMs} ms`:'—'}`,
+      `Request ID: ${d.requestId||'—'}`,
+      `モデル: ${d.model||model}`,
+      '',
+      '検索・取得情報',
+      d.testDiagnostic||'現行APIから構造化された検索・取得情報はまだ返っていません。',
+      '',
+      'リクエスト',
+      JSON.stringify(d.request||{},null,2)
+    ].join('\n');
+  }
+
+  async function copyDetailInfo(){
+    const text=buildDetailCopyText();
+    if(!text)return;
+    try{
+      await navigator.clipboard.writeText(text);
+    }catch(_){
+      const ta=document.createElement('textarea');
+      ta.value=text;
+      ta.style.position='fixed';
+      ta.style.opacity='0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    showToast('返答詳細をコピーしました');
+  }
+
   function setModel(value){
     model=value==='terra'?'terra':'luna'; storageSet(MODEL_KEY,model);
     modelLuna.classList.toggle('active',model==='luna'); modelTerra.classList.toggle('active',model==='terra');
@@ -511,6 +548,7 @@
   detailAction.addEventListener('click',()=>{closeMessageMenu();openDetail()});
   menuCancel.addEventListener('click',closeMessageMenu);
   messageMenuBackdrop.addEventListener('click',e=>{if(e.target===messageMenuBackdrop)closeMessageMenu()});
+  detailCopyButton?.addEventListener('click',copyDetailInfo);
   detailClose.addEventListener('click',()=>detailBackdrop.hidden=true);
   detailBackdrop.addEventListener('click',e=>{if(e.target===detailBackdrop)detailBackdrop.hidden=true});
 
