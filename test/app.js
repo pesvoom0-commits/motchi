@@ -55,6 +55,7 @@
   const detailBackdrop=$('detailBackdrop');
   const detailClose=$('detailClose');
   const detailMeta=$('detailMeta');
+  const detailAnswerCopyButton=$('detailAnswerCopyButton');
   const detailCopyButton=$('detailCopyButton');
   const detailDiagnostic=$('detailDiagnostic');
   const detailRequest=$('detailRequest');
@@ -364,6 +365,24 @@
     showToast('返答詳細をコピーしました');
   }
 
+  async function copyDetailAnswer(){
+    const text=String(selectedMessage?.item?.text||'');
+    if(!text)return;
+    try{
+      await navigator.clipboard.writeText(text);
+    }catch(_){
+      const ta=document.createElement('textarea');
+      ta.value=text;
+      ta.style.position='fixed';
+      ta.style.opacity='0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    showToast('回答本文をコピーしました');
+  }
+
   function setModel(value){
     model=value==='terra'?'terra':'luna'; storageSet(MODEL_KEY,model);
     modelLuna.classList.toggle('active',model==='luna'); modelTerra.classList.toggle('active',model==='terra');
@@ -598,6 +617,7 @@
   detailAction.addEventListener('click',()=>{closeMessageMenu();openDetail()});
   menuCancel.addEventListener('click',closeMessageMenu);
   messageMenuBackdrop.addEventListener('click',e=>{if(e.target===messageMenuBackdrop)closeMessageMenu()});
+  detailAnswerCopyButton?.addEventListener('click',copyDetailAnswer);
   detailCopyButton?.addEventListener('click',copyDetailInfo);
   detailClose.addEventListener('click',()=>detailBackdrop.hidden=true);
   detailBackdrop.addEventListener('click',e=>{if(e.target===detailBackdrop)detailBackdrop.hidden=true});
