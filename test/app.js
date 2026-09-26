@@ -384,11 +384,21 @@
     if(recovering)return;recovering=true;
     try{
       let ok=await pollResult(pending,row,10); if(ok)return;
-      const data=await api('/api/test/ask',{passphrase:current,question:pending.question,requestId:pending.requestId,conversation:pending.conversation,model:pending.model},60000);
+      const data=await api('/api/test/ask',{passphrase:current,question:pending.question,requestId:pending.requestId,conversation:pending.conversation,model:pending.model},180000);
       if(data.state==='completed'||data.answer)return completeAnswer(row,pending,data);
       if(data.testDiagnostic){pending.testDiagnostic=data.testDiagnostic;savePending(pending)}
       await pollResult(pending,row,18);
-    }catch(_){renderLoading(row,'返事を受け取り中')}finally{recovering=false;sendButton.disabled=false}
+    }catch(e){
+      const details={
+        requestId:pending.requestId,
+        responseMs:Date.now()-pending.startedAt,
+        model:pending.model||model,
+        testDiagnostic:`TEST backend error\n${String(e?.message||e||'unknown error')}`,
+        request:pending.request||{}
+      };
+      updateMessage(row,`エラー: ${e?.message||'返事を受け取れませんでした'}`,details);
+      clearPending();
+    }finally{recovering=false;sendButton.disabled=false}
   }
 
   async function submitQuestion(text){
@@ -397,9 +407,13 @@
     const aiIndex=addHistory('ai','',null,{requestId,model}); const row=drawMessage(history[aiIndex],aiIndex,chat,false); renderLoading(row,'考えちゅう');
     const pending={requestId,question:text,conversation,model,startedAt,aiIndex,request:{question:text,conversation,model}}; savePending(pending); sendButton.disabled=true;
     try{
-      const data=await api('/api/test/ask',{passphrase:current,question:text,requestId,conversation,model},60000);
+      const data=await api('/api/test/ask',{passphrase:current,question:text,requestId,conversation,model},180000);
       if(data.state==='completed'||(data.answer&&data.httpStatus!==202)){completeAnswer(row,pending,data)}
-      else{if(data.testDiagnostic){pending.testDiagnostic=data.testDiagnostic;savePending(pending)};await pollResult(pending,row,26)}
+      else{
+        if(data.testDiagnostic){pending.testDiagnostic=data.testDiagnostic;savePending(pending)}
+        const completed=await pollResult(pending,row,26);
+        if(!completed)await recoverPending(pending,row);
+      }
     }catch(e){
       if(e.status===401){row.remove();lock();return}
       await recoverPending(pending,row);
