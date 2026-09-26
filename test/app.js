@@ -18,6 +18,7 @@
   const loginButton=$('loginButton');
   const loginError=$('loginError');
   const titleButton=$('titleButton');
+  const searchForm=$('searchForm');
   const searchInput=$('searchInput');
   const archiveButton=$('archiveButton');
   const adminButton=$('adminButton');
@@ -483,6 +484,22 @@
     finally{loginButton.disabled=false}
   }
 
+  function keepSearchResultsOnCommit(){
+    const q=searchInput.value.trim();
+    if(!q)return;
+
+    // Results are already updated dynamically while typing.
+    // Do not re-render them here: re-rendering can reset the list/scroll position.
+    const keepY=window.scrollY;
+    searchInput.blur();
+
+    // Some mobile browsers move the viewport when the keyboard closes.
+    // Restore the same result-list position after that resize settles.
+    requestAnimationFrame(()=>window.scrollTo({top:keepY,behavior:'auto'}));
+    setTimeout(()=>window.scrollTo({top:keepY,behavior:'auto'}),80);
+    setTimeout(()=>window.scrollTo({top:keepY,behavior:'auto'}),220);
+  }
+
   searchInput.addEventListener('input',()=>{
     const q=searchInput.value;
     if(q.trim()){
@@ -495,40 +512,29 @@
 
   searchInput.addEventListener('focus',()=>{
     const q=searchInput.value.trim();
-    if(q){
-      if(searchView.hidden)showView('search');
+    if(q&&searchView.hidden){
+      showView('search');
       renderSearch(q);
     }
   });
 
-  // Mobile keyboards often send Enter/Search/✓ to "commit" a search.
-  // Committing must not reopen/reset the result list or jump to the first result.
-  // We only dismiss the keyboard and keep the currently rendered results/scroll position.
-  searchInput.addEventListener('keydown',e=>{
-    if(e.key!=='Enter'||e.isComposing)return;
+  // Desktop Enter and mobile Search/✓ are captured by this dedicated form.
+  // No page navigation, no first-result activation, no result-list reset.
+  searchForm?.addEventListener('submit',e=>{
     e.preventDefault();
-    const q=searchInput.value.trim();
-    if(!q)return;
-    if(searchView.hidden){
-      showView('search');
-      renderSearch(q);
-    }
-    searchInput.blur();
+    e.stopPropagation();
+    keepSearchResultsOnCommit();
   });
 
-  // iOS/Safari can emit a native `search` event when Search/✓ is pressed.
-  // Preserve the current results if the query is unchanged.
-  searchInput.addEventListener('search',()=>{
-    const q=searchInput.value.trim();
-    if(!q){
-      if(!searchView.hidden)showView('chat');
-      return;
-    }
-    if(searchView.hidden){
-      showView('search');
-      renderSearch(q);
-    }
+  // Extra guard for browsers that dispatch Enter before submit.
+  searchInput.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'&&e.keyCode!==13)return;
+    if(e.isComposing)return;
+    e.preventDefault();
+    e.stopPropagation();
+    keepSearchResultsOnCommit();
   });
+
   titleButton.addEventListener('click',openCurrent);
   archiveButton.addEventListener('click',()=>{searchInput.value='';renderArchiveCards();showView('archives')});
   returnCurrentButton.addEventListener('click',openCurrent);
