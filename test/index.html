@@ -1,1 +1,142 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#fbfaf7">
+  <title>弟子チャッピー TEST</title>
+  <link rel="stylesheet" href="./styles.css?v=20260926-2212">
+</head>
+<body>
+  <main id="app" class="app-shell" hidden>
+    <header id="v2Header" class="v2-header">
+      <div class="header-row">
+        <button id="titleButton" class="site-title" type="button" aria-label="現在の会話へ戻る">弟子チャッピー</button>
+        <label class="search-field" aria-label="会話を検索">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.3-4.3m2.3-5.2a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/></svg>
+          <input id="searchInput" type="search" inputmode="search" autocomplete="off" placeholder="メッセージを検索…">
+        </label>
+        <button id="archiveButton" class="icon-button" type="button" aria-label="思い出アーカイブ">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h16v12H4zM7 4.5h10l1 3H6l1-3Zm3 6h4"/></svg>
+        </button>
+        <button id="adminButton" class="admin-button" type="button">ADMIN</button>
+      </div>
+    </header>
 
+    <section id="chatView" class="view chat-view">
+      <div id="chat" class="chat" aria-live="polite"></div>
+      <form id="askForm" class="composer">
+        <textarea id="question" rows="1" maxlength="2000" placeholder="メッセージを入力…" enterkeyhint="send"></textarea>
+        <button id="sendButton" class="send-button" type="submit" aria-label="送信">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 12 16-8-5 16-3-6-8-2Zm8 2 8-10"/></svg>
+        </button>
+      </form>
+    </section>
+
+    <section id="searchView" class="view search-view" hidden>
+      <div id="searchSummary" class="view-intro">現在の会話と、過去の思い出を横断して検索します。</div>
+      <div id="searchResults" class="search-results"></div>
+    </section>
+
+    <section id="archiveListView" class="view archive-list-view" hidden>
+      <div class="view-heading">
+        <h1>思い出アーカイブ</h1>
+        <p>これまでの弟子チャッピーとの時間を、その頃の画面ごと残しています。</p>
+      </div>
+      <div id="archiveCards" class="archive-cards"></div>
+    </section>
+
+    <section id="archiveView" class="archive-view" hidden>
+      <div class="legacy-page">
+        <section class="legacy-card">
+          <header class="legacy-header">
+            <div class="legacy-eyebrow">MOTCHI’s AI</div>
+            <h1>もっちのAIと話してみる</h1>
+            <p>洋輔さん側で共有されている情報をもとに答えます。<br>本人の発言とAIの見立ては、なるべく分けて扱います。</p>
+          </header>
+          <div id="archiveChat" class="legacy-chat"></div>
+        </section>
+      </div>
+      <div class="archive-return-wrap">
+        <button id="returnCurrentButton" class="return-current" type="button">現在の弟子チャッピーへ</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="adminBackdrop" class="sheet-backdrop" hidden>
+    <section class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <h2 id="adminTitle">Adminパネル</h2>
+        <button id="adminClose" class="sheet-close" type="button" aria-label="閉じる">×</button>
+      </div>
+      <div class="admin-group">
+        <div class="admin-label">テストモデル</div>
+        <div class="segmented" role="group" aria-label="テストモデル">
+          <button id="modelLuna" type="button" data-model="luna">Luna</button>
+          <button id="modelTerra" type="button" data-model="terra">Terra</button>
+        </div>
+      </div>
+      <div class="admin-row"><span>最終同期</span><strong id="lastSync">—</strong></div>
+      <div class="admin-group usage-group">
+        <div class="admin-row"><span>本番の残り回数</span><strong><span id="productionRemaining">—</span> 回</strong></div>
+        <div class="counter-row">
+          <button id="remainingMinus" type="button" aria-label="1減らす">−</button>
+          <input id="remainingInput" type="number" min="0" max="20" step="1" inputmode="numeric">
+          <button id="remainingPlus" type="button" aria-label="1増やす">＋</button>
+          <button id="remainingSave" class="primary-small" type="button">保存</button>
+        </div>
+      </div>
+      <div class="admin-actions">
+        <button id="clearButton" type="button">テスト会話をクリア</button>
+        <button id="lockButton" type="button">鍵をかける</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="messageMenuBackdrop" class="sheet-backdrop context-backdrop" hidden>
+    <section class="context-sheet" role="dialog" aria-modal="true" aria-label="メッセージ操作">
+      <button id="copyAction" type="button"><span>コピー</span></button>
+      <button id="shareAction" type="button"><span>スクショ</span></button>
+      <button id="detailAction" type="button" hidden><span>返答詳細</span></button>
+      <button id="menuCancel" class="cancel-action" type="button"><span>キャンセル</span></button>
+    </section>
+  </div>
+
+  <div id="detailBackdrop" class="sheet-backdrop" hidden>
+    <section class="bottom-sheet detail-sheet" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <h2 id="detailTitle">この返答の詳細</h2>
+        <button id="detailClose" class="sheet-close" type="button" aria-label="閉じる">×</button>
+      </div>
+      <dl id="detailMeta" class="detail-meta"></dl>
+      <div class="detail-block">
+        <h3>検索・取得情報</h3>
+        <pre id="detailDiagnostic">現行APIから詳細情報が返った場合、ここに表示します。</pre>
+      </div>
+      <div class="detail-block">
+        <h3>リクエスト</h3>
+        <pre id="detailRequest"></pre>
+      </div>
+    </section>
+  </div>
+
+  <div id="login" class="login" hidden>
+    <div class="login-box">
+      <div class="login-mark">弟</div>
+      <h2>あいことば</h2>
+      <p>テスト版をひらきます。</p>
+      <input id="passphrase" type="password" autocomplete="current-password" enterkeyhint="go">
+      <button id="loginButton" type="button">ひらく</button>
+      <div id="loginError" class="error"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="./config.js?v=20260923-2345"></script>
+  <script src="./app.js?v=20260926-2212"></script>
+</body>
+</html>
