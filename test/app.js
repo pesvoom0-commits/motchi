@@ -18,7 +18,6 @@
   const loginButton=$('loginButton');
   const loginError=$('loginError');
   const titleButton=$('titleButton');
-  const searchForm=$('searchForm');
   const searchInput=$('searchInput');
   const archiveButton=$('archiveButton');
   const adminButton=$('adminButton');
@@ -68,6 +67,9 @@
   let model=storageGet(MODEL_KEY)||'luna';
   let toastTimer=null;
   let recovering=false;
+  let searchLastStableY=0;
+  let searchCommitRestoring=false;
+  let searchCommitTimers=[];
 
   function $(id){return document.getElementById(id)}
   function storageGet(key){try{return localStorage.getItem(key)||''}catch(_){return ''}}
@@ -484,20 +486,47 @@
     finally{loginButton.disabled=false}
   }
 
-  function keepSearchResultsOnCommit(){
+  function clearSearchCommitTimers(){
+    searchCommitTimers.forEach(id=>clearTimeout(id));
+    searchCommitTimers=[];
+  }
+
+  function rememberSearchScroll(){
+    if(!searchView.hidden&&!searchCommitRestoring){
+      searchLastStableY=window.scrollY;
+    }
+  }
+
+  function restoreSearchScroll(y){
+    if(searchView.hidden)return;
+    searchCommitRestoring=true;
+    window.scrollTo({top:y,behavior:'auto'});
+    requestAnimationFrame(()=>window.scrollTo({top:y,behavior:'auto'}));
+    clearSearchCommitTimers();
+    for(const ms of [40,120,260,480]){
+      searchCommitTimers.push(setTimeout(()=>{
+        if(searchView.hidden)return;
+        window.scrollTo({top:y,behavior:'auto'});
+        if(ms===480)searchCommitRestoring=false;
+      },ms));
+    }
+  }
+
+  function commitSearchWithoutChangingResults(){
     const q=searchInput.value.trim();
     if(!q)return;
 
-    // Results are already updated dynamically while typing.
-    // Do not re-render them here: re-rendering can reset the list/scroll position.
-    const keepY=window.scrollY;
-    searchInput.blur();
+    // Results were already produced by the input event.
+    // "確定" must not run renderSearch(), activate a result, or switch views.
+    const y=searchLastStableY||window.scrollY;
 
-    // Some mobile browsers move the viewport when the keyboard closes.
-    // Restore the same result-list position after that resize settles.
-    requestAnimationFrame(()=>window.scrollTo({top:keepY,behavior:'auto'}));
-    setTimeout(()=>window.scrollTo({top:keepY,behavior:'auto'}),80);
-    setTimeout(()=>window.scrollTo({top:keepY,behavior:'auto'}),220);
+    // Dismiss the keyboard after the key event has been cancelled.
+    // iOS may change page scroll while the visual viewport grows back;
+    // restore the exact pre-commit result-list position repeatedly.
+    setTimeout(()=>{
+      searchInput.blur();
+      restoreSearchScroll(y);
+    },0);
   }
 
   searchInput.addEventListener('input',()=>{
@@ -505,6 +534,7 @@
     if(q.trim()){
       if(searchView.hidden)showView('search');
       renderSearch(q);
+      requestAnimationFrame(rememberSearchScroll);
     }else if(!searchView.hidden){
       showView('chat');
     }
@@ -516,24 +546,38 @@
       showView('search');
       renderSearch(q);
     }
+    requestAnimationFrame(rememberSearchScroll);
   });
 
-  // Desktop Enter and mobile Search/✓ are captured by this dedicated form.
-  // No page navigation, no first-result activation, no result-list reset.
-  searchForm?.addEventListener('submit',e=>{
-    e.preventDefault();
-    e.stopPropagation();
-    keepSearchResultsOnCommit();
-  });
-
-  // Extra guard for browsers that dispatch Enter before submit.
+  // No form exists anymore, so Enter/完了/✓ has nothing to submit.
+  // Cancel the key and preserve the current dynamic results exactly as-is.
   searchInput.addEventListener('keydown',e=>{
-    if(e.key!=='Enter'&&e.keyCode!==13)return;
-    if(e.isComposing)return;
+    const isEnter=e.key==='Enter'||e.keyCode===13;
+    if(!isEnter||e.isComposing)return;
     e.preventDefault();
     e.stopPropagation();
-    keepSearchResultsOnCommit();
-  });
+    e.stopImmediatePropagation?.();
+    commitSearchWithoutChangingResults();
+  },true);
+
+  searchInput.addEventListener('keyup',e=>{
+    const isEnter=e.key==='Enter'||e.keyCode===13;
+    if(!isEnter||e.isComposing)return;
+    e.preventDefault();
+    e.stopPropagation();
+  },true);
+
+  // Track where the user actually is in the result list.
+  window.addEventListener('scroll',rememberSearchScroll,{passive:true});
+
+  // On iPhone the visual viewport changes several times while the keyboard closes.
+  // Keep restoring the pre-commit position during that transition.
+  window.visualViewport?.addEventListener('resize',()=>{
+    if(searchCommitRestoring&&!searchView.hidden){
+      const y=searchLastStableY;
+      requestAnimationFrame(()=>window.scrollTo({top:y,behavior:'auto'}));
+    }
+  },{passive:true});
 
   titleButton.addEventListener('click',openCurrent);
   archiveButton.addEventListener('click',()=>{searchInput.value='';renderArchiveCards();showView('archives')});
