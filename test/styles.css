@@ -35,11 +35,11 @@ button{cursor:pointer}
 .message{display:flex;width:100%;gap:8px;align-items:flex-start;scroll-margin-top:82px}
 .message.user{justify-content:flex-end}
 .message-avatar{width:24px;height:24px;border-radius:50%;object-fit:cover;flex:0 0 24px;background:#fff;border:1px solid rgba(0,0,0,.08)}
-.message-body{min-width:0;max-width:86%;display:flex;flex-direction:column}
-.message.user .message-body{align-items:flex-end}
+.message-body{min-width:0;display:flex;flex-direction:column;flex:1 1 0;max-width:calc(100% - 32px)}
+.message.user .message-body{align-items:flex-end;width:calc(100% - 32px)}
 .message.ai .message-body{align-items:flex-start;max-width:calc(100% - 32px)}
-.bubble{font-size:15px;line-height:1.72;white-space:pre-wrap;word-break:break-word;user-select:text;-webkit-user-select:text}
-.message.user .bubble{background:var(--user);border-radius:16px 16px 5px 16px;padding:10px 12px;max-width:88%}
+.bubble{font-size:15px;line-height:1.72;white-space:pre-wrap;word-break:break-word;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.message.user .bubble{background:var(--user);border-radius:16px 16px 5px 16px;padding:10px 12px;width:100%;max-width:none}
 .message.ai .bubble{background:var(--ai);border:1px solid var(--line);border-radius:16px 16px 16px 5px;padding:12px 13px;width:100%}
 .message-meta{font-size:10px;color:#9b9b97;margin-top:4px;line-height:1.2}
 .composer{position:fixed;z-index:28;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,540px);display:flex;align-items:flex-end;gap:8px;padding:10px 12px calc(10px + var(--safe-bottom));background:rgba(255,255,255,.97);backdrop-filter:blur(14px);border-top:1px solid var(--line)}

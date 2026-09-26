@@ -3,7 +3,7 @@
 
   const PASS_KEY='motchi_ai_test_passphrase';
   const CHAT_KEY='motchi_ai_test_chat_generation_2';
-  const LEGACY_CHAT_KEY='motchi_ai_test_chat_v2';
+  const LEGACY_CHAT_KEY='motchi_ai_chat_v2';
   const PENDING_KEY='motchi_ai_test_pending_v2';
   const MODEL_KEY='motchi_ai_test_model_v2';
   const MAX_HISTORY_MESSAGES=120;

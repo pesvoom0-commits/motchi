@@ -1,7 +1,7 @@
 (()=>{
   'use strict';
 
-  const CHAT_KEY='motchi_ai_test_chat_v2';
+  const CHAT_KEY='motchi_ai_chat_v2';
   const chat=document.getElementById('chat');
 
   function storageGet(key){
