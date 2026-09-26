@@ -334,7 +334,13 @@
     const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeoutMs);
     let res;try{res=await fetch(base+path,{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify(body),signal:controller.signal})}finally{clearTimeout(timer)}
     let data={};try{data=await res.json()}catch(_){}
-    if(!res.ok&&res.status!==202){const err=new Error(data.error||'通信に失敗しました');err.status=res.status;throw err}
+    if(!res.ok&&res.status!==202){
+      const err=new Error(data.error||'通信に失敗しました');
+      err.status=res.status;
+      err.detail=String(data.detail||'');
+      err.stage=String(data.stage||'');
+      throw err
+    }
     data.httpStatus=res.status;return data;
   }
 
@@ -393,7 +399,12 @@
         requestId:pending.requestId,
         responseMs:Date.now()-pending.startedAt,
         model:pending.model||model,
-        testDiagnostic:`TEST backend error\n${String(e?.message||e||'unknown error')}`,
+        testDiagnostic:[
+          'TEST backend error',
+          e?.stage?`stage=${e.stage}`:'',
+          String(e?.message||e||'unknown error'),
+          e?.detail?`detail=${e.detail}`:''
+        ].filter(Boolean).join('\n'),
         request:pending.request||{}
       };
       updateMessage(row,`エラー: ${e?.message||'返事を受け取れませんでした'}`,details);
@@ -435,8 +446,52 @@
     finally{loginButton.disabled=false}
   }
 
-  searchInput.addEventListener('input',()=>{const q=searchInput.value; if(q.trim()){showView('search');renderSearch(q)}else if(!searchView.hidden)showView('chat')});
-  searchInput.addEventListener('focus',()=>{if(searchInput.value.trim()){showView('search');renderSearch(searchInput.value)}});
+  searchInput.addEventListener('input',()=>{
+    const q=searchInput.value;
+    if(q.trim()){
+      if(searchView.hidden)showView('search');
+      renderSearch(q);
+    }else if(!searchView.hidden){
+      showView('chat');
+    }
+  });
+
+  searchInput.addEventListener('focus',()=>{
+    const q=searchInput.value.trim();
+    if(q){
+      if(searchView.hidden)showView('search');
+      renderSearch(q);
+    }
+  });
+
+  // Mobile keyboards often send Enter/Search/✓ to "commit" a search.
+  // Committing must not reopen/reset the result list or jump to the first result.
+  // We only dismiss the keyboard and keep the currently rendered results/scroll position.
+  searchInput.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'||e.isComposing)return;
+    e.preventDefault();
+    const q=searchInput.value.trim();
+    if(!q)return;
+    if(searchView.hidden){
+      showView('search');
+      renderSearch(q);
+    }
+    searchInput.blur();
+  });
+
+  // iOS/Safari can emit a native `search` event when Search/✓ is pressed.
+  // Preserve the current results if the query is unchanged.
+  searchInput.addEventListener('search',()=>{
+    const q=searchInput.value.trim();
+    if(!q){
+      if(!searchView.hidden)showView('chat');
+      return;
+    }
+    if(searchView.hidden){
+      showView('search');
+      renderSearch(q);
+    }
+  });
   titleButton.addEventListener('click',openCurrent);
   archiveButton.addEventListener('click',()=>{searchInput.value='';renderArchiveCards();showView('archives')});
   returnCurrentButton.addEventListener('click',openCurrent);
