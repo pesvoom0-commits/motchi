@@ -41,7 +41,9 @@ button{cursor:pointer}
 .bubble{font-size:15px;line-height:1.72;white-space:pre-wrap;word-break:break-word;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .message.user .bubble{background:var(--user);border-radius:16px 16px 5px 16px;padding:10px 12px;width:auto;max-width:100%}
 .message.ai .bubble{background:var(--ai);border:1px solid var(--line);border-radius:16px 16px 16px 5px;padding:12px 13px;width:100%}
-.message-meta{font-size:10px;color:#9b9b97;margin-top:4px;line-height:1.2}
+.message-meta,.header-meta{font-size:10px;color:#9b9b97;line-height:1.2}
+.message-meta{margin-top:4px}
+.header-meta{text-align:right;margin-top:5px;white-space:nowrap}
 .composer{position:fixed;z-index:28;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,540px);display:flex;align-items:flex-end;gap:8px;padding:10px 12px calc(10px + var(--safe-bottom));background:rgba(255,255,255,.97);backdrop-filter:blur(14px);border-top:1px solid var(--line)}
 .composer textarea{flex:1;resize:none;max-height:120px;min-height:42px;border:1px solid #e4e4e1;border-radius:21px;padding:10px 14px;background:#fafaf8;color:var(--text);font-size:16px;line-height:1.35;outline:none;overflow:auto}
 .send-button{width:42px;height:42px;border:0;border-radius:50%;background:#1f2022;color:white;display:grid;place-items:center;flex:0 0 42px}
@@ -115,7 +117,7 @@ button{cursor:pointer}
 .detail-block{border-top:1px solid var(--line);padding-top:14px;margin-top:14px}.detail-block h3{font-size:14px;margin:0 0 8px}
 .login{position:fixed;inset:0;z-index:500;display:grid;place-items:center;background:#f4f0e8;padding:24px}
 .login-box{width:min(100%,360px);text-align:center}
-.login-mark{width:56px;height:56px;margin:0 auto 14px;border:2px solid #222;border-radius:16px;display:grid;place-items:center;font-weight:900;font-size:24px;background:#fff}
+.login-mark{width:auto;height:auto;margin:0 auto 14px;border:0;border-radius:0;display:block;font-weight:800;font-size:24px;line-height:1.35;background:transparent}
 .login-box h2{margin:0 0 6px}.login-box p{margin:0 0 14px;color:#888;font-size:13px}
 .login-box input{width:100%;height:48px;border:1px solid #d9d6d0;border-radius:12px;background:#fff;font-size:16px;padding:0 12px;margin-bottom:10px}
 .login-box button{width:100%;height:48px;border:0;border-radius:12px;background:#222;color:#fff;font-weight:700;font-size:16px}
@@ -123,5 +125,34 @@ button{cursor:pointer}
 .toast{position:fixed;z-index:600;left:50%;bottom:max(22px,calc(18px + var(--safe-bottom)));transform:translate(-50%,10px);background:rgba(25,25,25,.92);color:#fff;border-radius:999px;padding:9px 13px;font-size:13px;opacity:0;pointer-events:none;transition:.16s ease;white-space:nowrap}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .loading-dots{display:inline-flex;gap:.12em;margin-left:.1em}.loading-dots span{animation:dot 1s infinite ease-in-out;opacity:.3}.loading-dots span:nth-child(2){animation-delay:.13s}.loading-dots span:nth-child(3){animation-delay:.26s}@keyframes dot{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-2px)}}
+
+.jump-latest{
+  position:fixed;
+  z-index:29;
+  right:max(16px,calc((100vw - 540px)/2 + 16px));
+  bottom:calc(76px + var(--safe-bottom));
+  width:40px;
+  height:40px;
+  border:1px solid #deded9;
+  border-radius:50%;
+  background:rgba(255,255,255,.97);
+  color:#4b4b48;
+  display:grid;
+  place-items:center;
+  padding:0;
+  box-shadow:0 3px 12px rgba(0,0,0,.12);
+  -webkit-tap-highlight-color:transparent;
+}
+.jump-latest svg{
+  width:22px;
+  height:22px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.jump-latest:active{transform:translateY(1px)}
+
 @media (max-width:390px){.header-row{grid-template-columns:auto minmax(70px,1fr) 36px auto;gap:6px}.site-title{font-size:14px}.admin-button{padding:0 6px;font-size:10px}.search-field{padding:0 8px}.search-field input{font-size:15px}}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}.toast{transition:none}.loading-dots span{animation:none}}
