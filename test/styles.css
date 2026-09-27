@@ -244,3 +244,15 @@ html[data-theme="dark"] .login-box button{background:#3e423c;color:#e0e1dc}
 html[data-theme="dark"] .error{color:#d58e82}
 html[data-theme="dark"] .toast{background:#2b2d29;color:#dedfd9}
 html[data-theme="dark"] .jump-latest{border-color:#3a3c36;background:rgba(31,32,30,.97);color:#aeb0a9;box-shadow:0 3px 12px rgba(0,0,0,.28)}
+
+/* v2.2.003: archive list footer dark-mode fix */
+html[data-theme="dark"] .archive-list-view{
+  background:var(--paper);
+}
+html[data-theme="dark"] .archive-list-return-wrap{
+  background:#1c1d1a !important;
+}
+html[data-theme="dark"] .archive-list-return-wrap .return-current{
+  background:#3b3e39;
+  color:#dedfd9;
+}
