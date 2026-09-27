@@ -277,14 +277,14 @@
   }
 
   function archiveDefinitions(){
-    return [{id:'v1',label:'v1',period:'〜 2026.09',name:'旧バージョン',description:'v2へ切り替わる前の画面と、その頃の会話。'}];
+    return [{id:'v1',label:'v1',period:'〜 2026.09',name:'旧バージョン',description:'みちゃこが「もっちとAIの会話をのぞき見る」ための最初の一歩。'}];
   }
 
   function renderArchiveCards(){
     archiveCards.innerHTML='';
     archiveDefinitions().forEach(def=>{
       const card=document.createElement('button'); card.type='button'; card.className='archive-card';
-      card.innerHTML=`<div><h2>${def.label}</h2><div class="period">${def.period}</div><p>${def.description}</p></div><div class="archive-thumb" aria-hidden="true"><div class="mini-head"></div><div class="mini-line"></div><div class="mini-bubble"></div><div class="mini-line"></div><div class="mini-bubble"></div></div>`;
+      card.innerHTML=`<div><h2>${def.label}</h2><div class="period">${def.period}</div><p>${def.description}</p></div>`;
       card.addEventListener('click',()=>{ if(def.id==='v1') location.href='./archive/v1/'; }); archiveCards.appendChild(card);
     });
   }

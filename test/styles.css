@@ -70,14 +70,10 @@ html[data-theme="dark"] .theme-icon-sun{display:block}
 .search-result-excerpt{font-size:15px;line-height:1.55;word-break:break-word}
 .empty-state{padding:42px 14px;text-align:center;color:#999;font-size:14px}
 .archive-cards{display:flex;flex-direction:column;gap:12px}
-.archive-card{appearance:none;width:100%;border:1px solid var(--line);background:#fff;border-radius:18px;padding:14px;text-align:left;color:var(--text);display:grid;grid-template-columns:1fr 82px;gap:12px;align-items:center}
+.archive-card{appearance:none;width:100%;border:1px solid var(--line);background:#fff;border-radius:18px;padding:14px;text-align:left;color:var(--text);display:block}
 .archive-card h2{font-size:20px;margin:0 0 4px}
 .archive-card .period{font-size:12px;color:#92928e;margin-bottom:8px}
 .archive-card p{font-size:13px;line-height:1.6;color:#777;margin:0}
-.archive-thumb{height:132px;border:1px solid #ddd;border-radius:14px;background:#f4f0e8;padding:8px;display:flex;flex-direction:column;gap:6px;overflow:hidden}
-.archive-thumb .mini-head{height:9px;width:48px;background:#2b2a28;border-radius:4px}
-.archive-thumb .mini-line{height:6px;border-radius:3px;background:#d9d4cc}
-.archive-thumb .mini-bubble{height:24px;border-radius:7px;background:#e9e2d7;margin-top:4px}
 .archive-view{background:#f4f0e8;min-height:100dvh;padding:16px 12px calc(82px + var(--safe-bottom))}
 .archive-list-return-wrap{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,540px);padding:10px 14px calc(10px + var(--safe-bottom));background:linear-gradient(to top,#fbfaf7 72%,rgba(251,250,247,0));z-index:20}
 
@@ -215,10 +211,10 @@ html[data-theme="dark"] .empty-state{color:#8c8f87}
 html[data-theme="dark"] .archive-card{background:#20211f;border-color:var(--line);color:var(--text)}
 html[data-theme="dark"] .archive-card .period,
 html[data-theme="dark"] .archive-card p{color:#8e9089}
-html[data-theme="dark"] .archive-thumb{background:#242522;border-color:#383a35}
-html[data-theme="dark"] .archive-thumb .mini-head{background:#777a72}
-html[data-theme="dark"] .archive-thumb .mini-line{background:#40423d}
-html[data-theme="dark"] .archive-thumb .mini-bubble{background:#2c3a40}
+html[data-theme="dark"] 
+html[data-theme="dark"] 
+html[data-theme="dark"] 
+html[data-theme="dark"] 
 html[data-theme="dark"] .archive-list-return-wrap{background:linear-gradient(to top,#1c1d1a 72%,rgba(28,29,26,0))}
 html[data-theme="dark"] .return-current{background:#3b3e39;color:#dedfd9}
 html[data-theme="dark"] .sheet-backdrop{background:rgba(0,0,0,.58)}
