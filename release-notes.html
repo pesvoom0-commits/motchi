@@ -6,6 +6,20 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="theme-color" content="#fbfaf7">
   <title>リリースノート | もっちをのぞく</title>
+  <script>
+    (() => {
+      const KEY='motchi_ai_theme_generation_2';
+      try{
+        const saved=localStorage.getItem(KEY);
+        const theme=(saved==='dark'||saved==='light')
+          ? saved
+          : (window.matchMedia?.('(prefers-color-scheme: dark)').matches?'dark':'light');
+        document.documentElement.dataset.theme=theme;
+        const meta=document.querySelector('meta[name="theme-color"]');
+        if(meta)meta.content=theme==='dark'?'#171815':'#fbfaf7';
+      }catch(_){}
+    })();
+  </script>
   <style>
     :root{--bg:#fbfaf7;--paper:#fff;--text:#181818;--muted:#8a8a86;--line:#ece9e3;--safe-bottom:env(safe-area-inset-bottom,0px)}
     *{box-sizing:border-box}
@@ -20,6 +34,11 @@
     ul{margin:0;padding-left:1.25em}
     li{font-size:14px;line-height:1.8;margin:0 0 6px}
     li:last-child{margin-bottom:0}
+
+    html[data-theme="dark"]{color-scheme:dark;--bg:#171815;--paper:#1c1d1a;--text:#d6d7d0;--muted:#92948d;--line:#30322d}
+    html[data-theme="dark"],html[data-theme="dark"] body{background:var(--bg);color:var(--text)}
+    html[data-theme="dark"] .page{background:var(--paper)}
+    html[data-theme="dark"] .back{color:#92948d}
   </style>
 </head>
 <body>
@@ -58,6 +77,14 @@
           <li>「最近」「この前」などの質問に、より正確に答えられるようになりました</li>
           <li>ぼくが取得できない情報は正直に答えるようになりました</li>
           <li>リリースノートを見られるようになりました</li>
+        </ul>
+      </section>
+
+
+      <section class="release-block">
+        <h2>v2.2</h2>
+        <ul>
+          <li>ダークモードを使えるようになりました</li>
         </ul>
       </section>
 
