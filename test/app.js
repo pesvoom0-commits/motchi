@@ -6,6 +6,7 @@
   const LEGACY_CHAT_KEY='motchi_ai_chat_v2';
   const PENDING_KEY='motchi_ai_test_pending_v2';
   const MODEL_KEY='motchi_ai_test_model_v2';
+  const THEME_KEY='motchi_ai_test_theme_v2';
   const MAX_HISTORY_MESSAGES=120;
 
   const cfg=window.MOTCHI_AI_CONFIG||{};
@@ -20,6 +21,7 @@
   const titleButton=$('titleButton');
   const searchInput=$('searchInput');
   const archiveButton=$('archiveButton');
+  const themeButton=$('themeButton');
   const adminButton=$('adminButton');
   const chatView=$('chatView');
   const searchView=$('searchView');
@@ -82,6 +84,34 @@
   function storageRemove(key){try{localStorage.removeItem(key)}catch(_){}}
   function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
   function clamp(n,min,max){return Math.max(min,Math.min(max,n))}
+  function systemTheme(){
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches?'dark':'light';
+  }
+  function currentTheme(){
+    return document.documentElement.dataset.theme==='dark'?'dark':'light';
+  }
+  function syncThemeButton(){
+    if(!themeButton)return;
+    const dark=currentTheme()==='dark';
+    themeButton.setAttribute('aria-label',dark?'ライトモードに切り替える':'ダークモードに切り替える');
+    themeButton.setAttribute('title',dark?'ライトモード':'ダークモード');
+  }
+  function applyTheme(value,{persist=false}={}){
+    const theme=value==='dark'?'dark':'light';
+    document.documentElement.dataset.theme=theme;
+    const meta=document.querySelector('meta[name="theme-color"]');
+    if(meta)meta.content=theme==='dark'?'#171815':'#fbfaf7';
+    if(persist)storageSet(THEME_KEY,theme);
+    syncThemeButton();
+  }
+  function initTheme(){
+    const saved=storageGet(THEME_KEY);
+    applyTheme(saved==='dark'||saved==='light'?saved:systemTheme(),{persist:false});
+    const media=window.matchMedia?.('(prefers-color-scheme: dark)');
+    media?.addEventListener?.('change',e=>{
+      if(!storageGet(THEME_KEY))applyTheme(e.matches?'dark':'light',{persist:false});
+    });
+  }
 
   function escapeHtml(text){
     return String(text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
@@ -310,9 +340,10 @@
     const canvas=document.createElement('canvas'); canvas.width=1080;
     const ctx=canvas.getContext('2d'); ctx.font='34px -apple-system, BlinkMacSystemFont, sans-serif';
     const lines=wrapLines(ctx,item.text,860); canvas.height=Math.max(360,150+lines.length*54);
-    ctx.fillStyle='#fbfaf7';ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle='#111';ctx.font='700 32px -apple-system, BlinkMacSystemFont, sans-serif';ctx.fillText(item.kind==='user'?'美砂':'ぼく',90,78);
-    ctx.font='34px -apple-system, BlinkMacSystemFont, sans-serif';ctx.fillStyle='#222';
+    const dark=currentTheme()==='dark';
+    ctx.fillStyle=dark?'#1c1d1a':'#fbfaf7';ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle=dark?'#d6d7d0':'#111';ctx.font='700 32px -apple-system, BlinkMacSystemFont, sans-serif';ctx.fillText(item.kind==='user'?'美砂':'ぼく',90,78);
+    ctx.font='34px -apple-system, BlinkMacSystemFont, sans-serif';ctx.fillStyle=dark?'#c8cac3':'#222';
     lines.forEach((line,i)=>ctx.fillText(line,90,145+i*54));
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
     if(!blob){showToast('画像を作れませんでした');return}
@@ -682,6 +713,7 @@
 
   titleButton.addEventListener('click',openCurrent);
   archiveButton.addEventListener('click',()=>{searchLastQuery='';searchCommitPending=false;searchInput.value='';renderArchiveCards();showView('archives')});
+  themeButton?.addEventListener('click',()=>applyTheme(currentTheme()==='dark'?'light':'dark',{persist:true}));
   returnCurrentButton.addEventListener('click',openCurrent);
   returnCurrentFromListButton?.addEventListener('click',openCurrent);
   adminButton.addEventListener('click',()=>{refreshProductionUsage();adminBackdrop.hidden=false});
@@ -720,6 +752,7 @@
     latestObserver.observe(chat,{childList:true,subtree:true,characterData:true});
   }
 
+  initTheme();
   renderArchiveCards(); setModel(model);
   const saved=storageGet(PASS_KEY);
   if(saved){current=saved;pass.value=saved;login.hidden=true;app.hidden=false;restoreChat();refreshProductionUsage();resumePending()}else lock();
