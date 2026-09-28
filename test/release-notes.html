@@ -32,14 +32,15 @@
     .release-block:last-child{border-bottom:0;margin-bottom:0}
     h2{font-size:18px;line-height:1.4;margin:0 0 14px}
     ul{margin:0;padding-left:1.25em}
-    li{font-size:14px;line-height:1.8;margin:0 0 6px}
+    li{font-size:14px;line-height:1.5;margin:0 0 6px}
     li:last-child{margin-bottom:0}
 
     html[data-theme="dark"]{color-scheme:dark;--bg:#171815;--paper:#1c1d1a;--text:#d6d7d0;--muted:#92948d;--line:#30322d}
     html[data-theme="dark"],html[data-theme="dark"] body{background:var(--bg);color:var(--text)}
     html[data-theme="dark"] .page{background:var(--paper)}
     html[data-theme="dark"] .back{color:#92948d}
-      .dev-label{display:inline-block;font-size:11px;line-height:1.5;border:1px solid currentColor;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:middle}
+      .dev-label{display:inline-block;font-size:9px;line-height:1.35;border:0;border-radius:3px;padding:1px 4px;margin-left:5px;vertical-align:baseline;background:#eeeeec;color:#777874;font-weight:400}
+    html[data-theme="dark"] .dev-label{background:#30312e;color:#a4a69f}
     .release-policy{font-size:12px;line-height:1.8;color:var(--muted);margin:-18px 0 28px}
   </style>
 </head>
@@ -47,22 +48,23 @@
   <main class="page">
     <a class="back" href="./">もっちをのぞくに戻る</a>
     <h1>リリースノート</h1>
-    <p class="release-policy">すべての変更を同じバージョンの中に新しい順で記録します。開発向けの項目は末尾に「開発」ラベルを付け、本番には公開済みのUXに関わる項目だけを掲載します。</p>
+    <p class="release-policy">すべての変更を同じバージョンの中に新しい順で記録します。開発向けの項目は末尾に「dev」ラベルを付け、本番には公開済みのUXに関わる項目だけを掲載します。</p>
     <!-- Release policy: This test page is the master. Within each major.minor version,
          mix shipped UX and development entries in reverse chronological order.
-         Keep patch versions in data-build, not separate headings. Put 開発 labels at item ends.
+         Keep patch versions in data-build, not separate headings. Put dev labels at item ends.
          Production copies only shipped UX entries; omit development and secret features. -->
     <section class="release-block">
       <h2>v2.2</h2>
       <ul>
-        <li data-audience="development">本番の吹き出し長押しメニューに管理用の「返答詳細」が表示される不具合を修正し、コピー・スクショだけを使えるようになりました。会話履歴はそのまま保持します。<span class="dev-label">開発</span></li>
-        <li data-audience="development">プレースホルダーのランダム表示・14px表示・上下フェードを本番でも使えるようになりました。本番は5秒間隔のシークレットリリースとし、本番リリースノートへの告知は省略しています。<span class="dev-label">開発</span></li>
-        <li data-audience="development" data-build="2.2.005">プレースホルダーが少し小さくなり、下からふわっと現れて上へ消えるようになりました。<span class="dev-label">開発</span></li>
-        <li data-audience="development" data-build="2.2.005">同じバージョンの変更を新しい順にまとめ、開発ラベルを項目の末尾で確認できるようになりました。<span class="dev-label">開発</span></li>
-        <li data-audience="development" data-build="2.2.004">検索欄と入力欄で、それぞれ10個の発言からランダムにプレースホルダーを表示できるようになりました（シークレット・本番告知対象外）。<span class="dev-label">開発</span></li>
-        <li data-audience="development" data-build="2.2.004">ADMINパネルで切り替え間隔を3・5・8・12秒／停止から選んで試せるようになりました。初期値は8秒で、端末ごとに保存します。<span class="dev-label">開発</span></li>
-        <li data-audience="development" data-build="2.2.004">入力中・フォーカス中・画面非表示中は切り替えを止め、同じ文が連続しないようになりました。<span class="dev-label">開発</span></li>
-        <li data-audience="development" data-build="2.2.004">テスト版をリリース履歴のマスターとし、細かい更新も確認できるようになりました。<span class="dev-label">開発</span></li>
+        <li data-audience="development">リリースノートの折り返し行の行間を詰め、テスト版の開発ラベルを小さなグレー背景のdev表示で確認できるようになりました。<span class="dev-label">dev</span></li>
+        <li data-audience="development">本番の吹き出し長押しメニューに管理用の「返答詳細」が表示される不具合を修正し、コピー・スクショだけを使えるようになりました。会話履歴はそのまま保持します。<span class="dev-label">dev</span></li>
+        <li data-audience="development">プレースホルダーのランダム表示・14px表示・上下フェードを本番でも使えるようになりました。本番は5秒間隔のシークレットリリースとし、本番リリースノートへの告知は省略しています。<span class="dev-label">dev</span></li>
+        <li data-audience="development" data-build="2.2.005">プレースホルダーが少し小さくなり、下からふわっと現れて上へ消えるようになりました。<span class="dev-label">dev</span></li>
+        <li data-audience="development" data-build="2.2.005">同じバージョンの変更を新しい順にまとめ、開発ラベルを項目の末尾で確認できるようになりました。<span class="dev-label">dev</span></li>
+        <li data-audience="development" data-build="2.2.004">検索欄と入力欄で、それぞれ10個の発言からランダムにプレースホルダーを表示できるようになりました（シークレット・本番告知対象外）。<span class="dev-label">dev</span></li>
+        <li data-audience="development" data-build="2.2.004">ADMINパネルで切り替え間隔を3・5・8・12秒／停止から選んで試せるようになりました。初期値は8秒で、端末ごとに保存します。<span class="dev-label">dev</span></li>
+        <li data-audience="development" data-build="2.2.004">入力中・フォーカス中・画面非表示中は切り替えを止め、同じ文が連続しないようになりました。<span class="dev-label">dev</span></li>
+        <li data-audience="development" data-build="2.2.004">テスト版をリリース履歴のマスターとし、細かい更新も確認できるようになりました。<span class="dev-label">dev</span></li>
         <li>リリースノートを新しい順に見られるようになりました</li>
         <li>ダークモードを使えるようになりました</li>
       </ul>
