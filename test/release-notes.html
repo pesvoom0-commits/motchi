@@ -39,12 +39,28 @@
     html[data-theme="dark"],html[data-theme="dark"] body{background:var(--bg);color:var(--text)}
     html[data-theme="dark"] .page{background:var(--paper)}
     html[data-theme="dark"] .back{color:#92948d}
+      .dev-label{display:inline-block;font-size:11px;line-height:1.5;border:1px solid currentColor;border-radius:4px;padding:1px 5px;margin-right:6px;vertical-align:middle}
+    .release-policy{font-size:12px;line-height:1.8;color:var(--muted);margin:-18px 0 28px}
   </style>
 </head>
 <body>
   <main class="page">
     <a class="back" href="./">もっちをのぞくに戻る</a>
     <h1>リリースノート</h1>
+    <p class="release-policy">テスト版をすべての変更のマスターとして記録します。<span class="dev-label">開発</span>は検証・内部改善向けです。本番には公開済みのUXに関わる項目だけを掲載します。</p>
+    <!-- Release policy: Add every future change here first, including patch versions.
+         Mark internal/test-only entries data-audience="development" with the 開発 label.
+         Production release notes copy only shipped UX entries, omit development and secret features,
+         and consolidate test patch versions into their production release version. -->
+    <section class="release-block" data-audience="development">
+      <h2>v2.3.001 TEST <span class="dev-label">開発</span></h2>
+      <ul>
+        <li><span class="dev-label">開発</span>検索欄と入力欄で、それぞれ10個の発言からランダムにプレースホルダーを表示できるようになりました（シークレット・本番告知対象外）。</li>
+        <li><span class="dev-label">開発</span>ADMINパネルで切り替え間隔を3・5・8・12秒／停止から選んで試せるようになりました。初期値は8秒で、端末ごとに保存します。</li>
+        <li><span class="dev-label">開発</span>入力中・フォーカス中・画面非表示中は切り替えを止め、同じ文が連続しないようになりました。</li>
+        <li><span class="dev-label">開発</span>テスト版をリリース履歴のマスターとし、細かい更新も開発ラベル付きで確認できるようになりました。</li>
+      </ul>
+    </section>
 
       <section class="release-block">
         <h2>v2.2</h2>
