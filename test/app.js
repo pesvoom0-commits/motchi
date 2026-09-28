@@ -752,6 +752,43 @@
     latestObserver.observe(chat,{childList:true,subtree:true,characterData:true});
   }
 
+
+  // v2.2.006 TEST: inspect continuity without submitting extra questions.
+  const memoryGroup=document.createElement('div');
+  memoryGroup.className='admin-group';
+  const memorySyncButton=document.createElement('button');
+  memorySyncButton.type='button';memorySyncButton.className='admin-button';
+  memorySyncButton.textContent='質問履歴の検索データを更新';
+  const memoryStatus=document.createElement('p');
+  memoryStatus.style.cssText='font-size:12px;line-height:1.5;overflow-wrap:anywhere';
+  memoryStatus.setAttribute('role','status');
+  const latestDetailButton=document.createElement('button');
+  latestDetailButton.type='button';latestDetailButton.className='admin-button';
+  latestDetailButton.textContent='最新の返答詳細';
+  memoryGroup.append(memorySyncButton,memoryStatus,latestDetailButton);
+  clearButton.parentElement.before(memoryGroup);
+  latestDetailButton.addEventListener('click',()=>{
+    const index=history.findLastIndex(item=>item.kind==='ai'&&item.text&&item.details);
+    if(index<0){showToast('返答詳細はまだありません');return;}
+    selectedMessage={item:history[index],index,legacy:false};
+    adminBackdrop.hidden=true;openDetail();
+  });
+  memorySyncButton.addEventListener('click',async()=>{
+    if(!current || memorySyncButton.disabled)return;
+    memorySyncButton.disabled=true;memoryStatus.textContent='質問履歴を準備しています…';
+    try{
+      for(let attempt=0;attempt<20;attempt++){
+        const status=await api('/api/test/admin/question-memory',{passphrase:current},60000);
+        if(status.error)throw new Error(status.error);
+        if(status.busy){memoryStatus.textContent='別の更新が進行中です。少し待って再度押してください。';return;}
+        if(!status.remaining){memoryStatus.textContent='質問履歴の検索データを更新しました。';return;}
+        memoryStatus.textContent='更新中：残り約'+status.remaining+'件';
+      }
+      memoryStatus.textContent+='。続きはもう一度押して更新できます。';
+    }catch(e){memoryStatus.textContent='更新できませんでした：'+(e.message||'通信エラー');}
+    finally{memorySyncButton.disabled=false;}
+  });
+
   initTheme();
   renderArchiveCards(); setModel(model);
   const saved=storageGet(PASS_KEY);
