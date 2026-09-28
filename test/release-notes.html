@@ -39,7 +39,7 @@
     html[data-theme="dark"],html[data-theme="dark"] body{background:var(--bg);color:var(--text)}
     html[data-theme="dark"] .page{background:var(--paper)}
     html[data-theme="dark"] .back{color:#92948d}
-      .dev-label{display:inline-block;font-size:9px;line-height:1.35;border:0;border-radius:3px;padding:1px 4px;margin-left:5px;vertical-align:baseline;background:#eeeeec;color:#777874;font-weight:400}
+      .dev-label{display:inline-block;font-size:9px;line-height:1.35;border:0;border-radius:3px;padding:1px 4px;margin-left:5px;vertical-align:middle;background:#eeeeec;color:#777874;font-weight:400}
     html[data-theme="dark"] .dev-label{background:#30312e;color:#a4a69f}
     .release-policy{font-size:12px;line-height:1.8;color:var(--muted);margin:-18px 0 28px}
   </style>
@@ -56,7 +56,7 @@
     <section class="release-block">
       <h2>v2.2</h2>
       <ul>
-        <li data-audience="development">リリースノートの折り返し行の行間を詰め、テスト版の開発ラベルを小さなグレー背景のdev表示で確認できるようになりました。<span class="dev-label">dev</span></li>
+        <li data-audience="development">リリースノートの折り返し行の行間を詰め、テスト版の開発ラベルを小さなグレー背景のdev表示で確認できるようになりました。ラベルは本文に対して上下中央に揃えました。<span class="dev-label">dev</span></li>
         <li data-audience="development">本番の吹き出し長押しメニューに管理用の「返答詳細」が表示される不具合を修正し、コピー・スクショだけを使えるようになりました。会話履歴はそのまま保持します。<span class="dev-label">dev</span></li>
         <li data-audience="development">プレースホルダーのランダム表示・14px表示・上下フェードを本番でも使えるようになりました。本番は5秒間隔のシークレットリリースとし、本番リリースノートへの告知は省略しています。<span class="dev-label">dev</span></li>
         <li data-audience="development" data-build="2.2.005">プレースホルダーが少し小さくなり、下からふわっと現れて上へ消えるようになりました。<span class="dev-label">dev</span></li>
