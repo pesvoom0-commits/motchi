@@ -326,7 +326,7 @@
 
   function openMessageMenu(){
     if(!selectedMessage)return;
-    detailAction.hidden=selectedMessage.legacy||selectedMessage.item.kind!=='ai'||selectedMessage.index<0;
+    detailAction.hidden=true; // Reply diagnostics are available only in the test app.
     messageMenuBackdrop.hidden=false;
   }
   function closeMessageMenu(){messageMenuBackdrop.hidden=true}
@@ -363,17 +363,6 @@
     if(navigator.canShare?.({files:[file]})&&navigator.share){
       try{await navigator.share({files:[file]})}catch(e){if(e?.name!=='AbortError')showToast('共有できませんでした')}
     }else showToast('この端末では共有シートを開けません');
-  }
-
-  function openDetail(){
-    const item=selectedMessage?.item; if(!item)return;
-    const d=item.details||{};
-    detailMeta.innerHTML='';
-    const pairs=[['応答時間',d.responseMs?`${d.responseMs} ms`:'—'],['Request ID',d.requestId||'—'],['モデル',d.model||model]];
-    pairs.forEach(([k,v])=>{const dt=document.createElement('dt');dt.textContent=k;const dd=document.createElement('dd');dd.textContent=v;detailMeta.append(dt,dd)});
-    detailDiagnostic.textContent=d.testDiagnostic||'現行APIから構造化された検索・取得情報はまだ返っていません。';
-    detailRequest.textContent=JSON.stringify(d.request||{},null,2);
-    detailBackdrop.hidden=false;
   }
 
   function buildDetailCopyText(){
@@ -747,7 +736,7 @@
 
   copyAction.addEventListener('click',async()=>{closeMessageMenu();await copySelected()});
   shareAction.addEventListener('click',async()=>{closeMessageMenu();await shareSelected()});
-  detailAction.addEventListener('click',()=>{closeMessageMenu();openDetail()});
+  // No reply-detail action is registered in production.
   menuCancel.addEventListener('click',closeMessageMenu);
   messageMenuBackdrop.addEventListener('click',e=>{if(e.target===messageMenuBackdrop)closeMessageMenu()});
   detailAnswerCopyButton?.addEventListener('click',copyDetailAnswer);
