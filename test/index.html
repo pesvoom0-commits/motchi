@@ -29,7 +29,7 @@
         <button id="titleButton" class="site-title" type="button" aria-label="現在の会話へ戻る">もっちをのぞく</button>
         <div class="search-field" role="search" aria-label="会話を検索">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.3-4.3m2.3-5.2a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/></svg>
-          <input id="searchInput" type="text" inputmode="search" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="検索">
+          <input aria-label="会話を検索" id="searchInput" type="text" inputmode="search" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="検索">
         </div>
         <button id="archiveButton" class="icon-button" type="button" aria-label="アーカイブ">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6h6l2 2h9v10h-17z"/></svg>
@@ -40,7 +40,7 @@
         </button>
         <button id="adminButton" class="admin-button" type="button">ADMIN</button>
       </div>
-      <div class="header-meta-row"><div class="header-meta">ver 2.2.003 TEST · updated 2026/09/27</div><a class="header-release" href="./release-notes.html">リリースノート</a><button id="lockButton" class="header-lock" type="button">鍵をかける</button></div>
+      <div class="header-meta-row"><div class="header-meta">ver 2.3.001 TEST · updated 2026/09/28</div><a class="header-release" href="./release-notes.html">リリースノート</a><button id="lockButton" class="header-lock" type="button">鍵をかける</button></div>
     </header>
 
     <section id="chatView" class="view chat-view">
@@ -49,7 +49,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 9 5.5 5.5L17.5 9"/></svg>
       </button>
       <form id="askForm" class="composer">
-        <textarea id="question" rows="1" maxlength="2000" placeholder="のぞきたいことを書いてください" enterkeyhint="send"></textarea>
+        <textarea aria-label="質問を入力" id="question" rows="1" maxlength="2000" placeholder="のぞきたいことを書いてください" enterkeyhint="send"></textarea>
         <div class="composer-side">
           <span id="remainingDisplay" class="remaining-display">残り99回</span>
           <button id="sendButton" class="send-button" type="submit" aria-label="送信">
@@ -116,6 +116,13 @@
           <button id="remainingSave" class="primary-small" type="button">保存</button>
         </div>
       </div>
+      <div class="admin-group">
+        <label class="admin-label" for="placeholderSeconds">プレースホルダーの切り替え間隔</label>
+        <select id="placeholderSeconds" style="font:inherit;padding:8px;border:1px solid currentColor;border-radius:8px;color:inherit;background:transparent">
+          <option value="3">3秒</option><option value="5">5秒</option><option value="8" selected>8秒</option><option value="12">12秒</option><option value="0">停止</option>
+        </select>
+        <p style="font-size:12px;line-height:1.6">空欄のときに切り替わります。入力中は止まり、選んだ間隔はこの端末に保存されます。</p>
+      </div>
       <div class="admin-actions">
         <button id="clearButton" type="button">テスト会話をクリア</button>
         
@@ -168,5 +175,54 @@
 
   <script src="./config.js?v=20260923-2345"></script>
   <script src="./app.js?v=20260927-v22dark"></script>
+
+  <!-- TEST-only secret feature. Do not announce in production release notes. -->
+  <script>
+  (() => {
+    'use strict';
+    const key = 'motchi_test_placeholder_seconds';
+    const choices = [0, 3, 5, 8, 12];
+    const control = document.getElementById('placeholderSeconds');
+    let seconds = 8;
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved !== null && choices.includes(Number(saved))) seconds = Number(saved);
+    } catch (_) {}
+    control.value = String(seconds);
+    const fields = [
+      { el: document.getElementById('searchInput'), words: ['何話したっけなー', 'あん時、何言ってたっけー', 'おあーーー、なんやっけーーーー？', '記憶たどりちゅう', 'これはどこだ', 'え、ここどこ', 'なになに？なに探してたん', 'なんて検索してるのん？', '探してるwwww', 'むっず。さがすのむっず'] },
+      { el: document.getElementById('question'), words: ['それってどういうこと？', '教えて？', 'ん？みちゃこはどういう感じ？', 'やたらとメロい、はどういう状態？', 'なあなあ、これどう思う？', 'どんな夢？', 'どんなイメージよw', 'なんでなんでー？', 'どの心境', 'えっ、なんで？'] }
+    ];
+    function pick(field) {
+      const pool = field.words.filter(word => word !== field.el.placeholder);
+      field.el.placeholder = pool[Math.floor(Math.random() * pool.length)];
+    }
+    function schedule(field) {
+      clearTimeout(field.timer);
+      if (!seconds || document.hidden) return;
+      field.timer = setTimeout(() => {
+        const el = field.el;
+        if (!el.value && !el.disabled && document.activeElement !== el && el.getClientRects().length) pick(field);
+        schedule(field);
+      }, seconds * 1000);
+    }
+    fields.forEach(field => {
+      pick(field);
+      ['focus', 'blur', 'input', 'compositionstart', 'compositionend'].forEach(event => {
+        field.el.addEventListener(event, () => schedule(field));
+      });
+      schedule(field);
+    });
+    control.addEventListener('change', () => {
+      const next = Number(control.value);
+      seconds = choices.includes(next) ? next : 8;
+      try { localStorage.setItem(key, String(seconds)); } catch (_) {}
+      fields.forEach(schedule);
+    });
+    document.addEventListener('visibilitychange', () => fields.forEach(schedule));
+    window.addEventListener('pagehide', () => fields.forEach(field => clearTimeout(field.timer)));
+    window.addEventListener('pageshow', () => fields.forEach(schedule));
+  })();
+  </script>
 </body>
 </html>
