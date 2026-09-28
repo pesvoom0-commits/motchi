@@ -21,6 +21,17 @@
     })();
   </script>
   <link rel="stylesheet" href="./styles.css?v=20260927-22003">
+  <style>
+    .placeholder-wrap{position:relative;flex:1;min-width:0;overflow:hidden}
+    .placeholder-wrap>input,.placeholder-wrap>textarea{display:block;width:100%;box-sizing:border-box}
+    #searchInput::placeholder,#question::placeholder{font-size:14px}
+    .placeholder-wrap:not(:focus-within)>input::placeholder,.placeholder-wrap:not(:focus-within)>textarea::placeholder{color:transparent!important}
+    .floating-placeholder{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;overflow:hidden;pointer-events:none;color:#aaa;font-size:14px;line-height:1.35}
+    .composer .floating-placeholder{left:15px;right:15px;top:11px;bottom:auto;height:22px;color:#757575}
+    .floating-placeholder>span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .placeholder-wrap:focus-within .floating-placeholder,.placeholder-wrap.has-value .floating-placeholder{visibility:hidden}
+    html[data-theme="dark"] .floating-placeholder{color:#777a72}
+  </style>
 </head>
 <body>
   <main id="app" class="app-shell" hidden>
@@ -40,7 +51,7 @@
         </button>
         <button id="adminButton" class="admin-button" type="button">ADMIN</button>
       </div>
-      <div class="header-meta-row"><div class="header-meta">ver 2.3.001 TEST · updated 2026/09/28</div><a class="header-release" href="./release-notes.html">リリースノート</a><button id="lockButton" class="header-lock" type="button">鍵をかける</button></div>
+      <div class="header-meta-row"><div class="header-meta">ver 2.2.005 TEST · updated 2026/09/28</div><a class="header-release" href="./release-notes.html">リリースノート</a><button id="lockButton" class="header-lock" type="button">鍵をかける</button></div>
     </header>
 
     <section id="chatView" class="view chat-view">
@@ -193,23 +204,73 @@
       { el: document.getElementById('searchInput'), words: ['何話したっけなー', 'あん時、何言ってたっけー', 'おあーーー、なんやっけーーーー？', '記憶たどりちゅう', 'これはどこだ', 'え、ここどこ', 'なになに？なに探してたん', 'なんて検索してるのん？', '探してるwwww', 'むっず。さがすのむっず'] },
       { el: document.getElementById('question'), words: ['それってどういうこと？', '教えて？', 'ん？みちゃこはどういう感じ？', 'やたらとメロい、はどういう状態？', 'なあなあ、これどう思う？', 'どんな夢？', 'どんなイメージよw', 'なんでなんでー？', 'どの心境', 'えっ、なんで？'] }
     ];
-    function pick(field) {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    function cancelMotion(field) {
+      field.motionId = (field.motionId || 0) + 1;
+      if (field.animation) field.animation.cancel();
+      field.animation = null;
+    }
+    function sync(field) {
+      field.wrap.classList.toggle('has-value', !!field.el.value);
+    }
+    async function pick(field, animate = false) {
+      cancelMotion(field);
+      const id = field.motionId;
       const pool = field.words.filter(word => word !== field.el.placeholder);
-      field.el.placeholder = pool[Math.floor(Math.random() * pool.length)];
+      const next = pool[Math.floor(Math.random() * pool.length)];
+      const moving = animate && !reducedMotion.matches;
+      try {
+        if (moving) {
+          field.animation = field.text.animate([
+            {transform:'translateY(0)',opacity:1},
+            {transform:'translateY(-7px)',opacity:0}
+          ], {duration:140,easing:'ease-in',fill:'forwards'});
+          await field.animation.finished;
+          if (id !== field.motionId) return;
+        }
+        field.el.placeholder = next;
+        field.text.textContent = next;
+        if (moving) {
+          field.animation.cancel();
+          field.animation = field.text.animate([
+            {transform:'translateY(7px)',opacity:0},
+            {transform:'translateY(0)',opacity:1}
+          ], {duration:180,easing:'cubic-bezier(.2,.7,.2,1)',fill:'forwards'});
+          await field.animation.finished;
+        }
+      } catch (_) { /* Focus/input cancels motion without touching the user's text. */ }
+      finally {
+        if (id === field.motionId && field.animation) {
+          field.animation.cancel();
+          field.animation = null;
+        }
+      }
     }
     function schedule(field) {
       clearTimeout(field.timer);
       if (!seconds || document.hidden) return;
       field.timer = setTimeout(() => {
         const el = field.el;
-        if (!el.value && !el.disabled && document.activeElement !== el && el.getClientRects().length) pick(field);
+        if (!el.value && !el.disabled && document.activeElement !== el && el.getClientRects().length) pick(field, true);
         schedule(field);
       }, seconds * 1000);
     }
     fields.forEach(field => {
+      const wrap = document.createElement('div');
+      wrap.className = 'placeholder-wrap';
+      field.el.before(wrap);
+      wrap.append(field.el);
+      const overlay = document.createElement('span');
+      overlay.className = 'floating-placeholder';
+      overlay.setAttribute('aria-hidden', 'true');
+      const text = document.createElement('span');
+      overlay.append(text);
+      wrap.append(overlay);
+      Object.assign(field, {wrap, text});
+      sync(field);
       pick(field);
       ['focus', 'blur', 'input', 'compositionstart', 'compositionend'].forEach(event => {
-        field.el.addEventListener(event, () => schedule(field));
+        field.el.addEventListener(event, () => { cancelMotion(field); sync(field); schedule(field); });
       });
       schedule(field);
     });
@@ -217,9 +278,10 @@
       const next = Number(control.value);
       seconds = choices.includes(next) ? next : 8;
       try { localStorage.setItem(key, String(seconds)); } catch (_) {}
-      fields.forEach(schedule);
+      fields.forEach(field => { cancelMotion(field); schedule(field); });
     });
-    document.addEventListener('visibilitychange', () => fields.forEach(schedule));
+    document.addEventListener('visibilitychange', () => fields.forEach(field => { cancelMotion(field); schedule(field); }));
+    document.getElementById('askForm').addEventListener('submit', () => fields.forEach(sync));
     window.addEventListener('pagehide', () => fields.forEach(field => clearTimeout(field.timer)));
     window.addEventListener('pageshow', () => fields.forEach(schedule));
   })();
