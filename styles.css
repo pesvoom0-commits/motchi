@@ -35,7 +35,7 @@ html[data-theme="dark"] .theme-icon-moon{display:none}
 html[data-theme="dark"] .theme-icon-sun{display:block}
 .admin-button{padding:0 9px;font-size:11px;font-weight:700;letter-spacing:.02em}
 .view{min-height:calc(100dvh - 60px)}
-.chat-view{padding:18px 14px calc(92px + var(--safe-bottom))}
+.chat-view{padding:18px 14px calc(var(--composer-height, calc(72px + var(--safe-bottom))) + 20px)}
 .chat{display:flex;flex-direction:column;gap:14px}
 .message{display:flex;width:100%;gap:8px;align-items:flex-start;scroll-margin-top:82px}
 .message.user{justify-content:flex-end}
@@ -54,7 +54,7 @@ html[data-theme="dark"] .theme-icon-sun{display:block}
 .header-lock{appearance:none;border:0;background:none;padding:0;color:#777;font-size:10px;line-height:1.2;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
 .header-release{color:#777;font-size:10px;line-height:1.2;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
 .composer{position:fixed;z-index:28;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,540px);display:flex;align-items:flex-end;gap:8px;padding:10px 12px calc(10px + var(--safe-bottom));background:rgba(255,255,255,.97);backdrop-filter:blur(14px);border-top:1px solid var(--line)}
-.composer textarea{flex:1;resize:none;max-height:120px;min-height:42px;border:1px solid #e4e4e1;border-radius:21px;padding:10px 14px;background:#fafaf8;color:var(--text);font-size:16px;line-height:1.35;outline:none;overflow:auto}
+.composer textarea{flex:1;resize:none;max-height:130px;min-height:42px;border:1px solid #e4e4e1;border-radius:21px;padding:10px 14px;background:#fafaf8;color:var(--text);font-size:16px;line-height:1.35;outline:none;overflow:auto}
 .composer-side{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;flex:0 0 48px}
 .remaining-display{font-size:10px;line-height:1.1;color:#8f8f8a;white-space:nowrap}
 .send-button{width:42px;height:42px;border:0;border-radius:50%;background:#1f2022;color:white;display:grid;place-items:center;flex:0 0 42px}
@@ -137,7 +137,7 @@ html[data-theme="dark"] .theme-icon-sun{display:block}
   position:fixed;
   z-index:29;
   right:max(16px,calc((100vw - 540px)/2 + 16px));
-  bottom:calc(76px + var(--safe-bottom));
+  bottom:calc(var(--composer-height, calc(72px + var(--safe-bottom))) + 4px);
   width:40px;
   height:40px;
   border:1px solid #deded9;
