@@ -213,7 +213,7 @@
     chat.innerHTML='';
     drawMessage({kind:'ai',text:'さて、なにをのぞきにいきましょうか？',ts:null},-1,chat,false);
     history.forEach((item,index)=>drawMessage(item,index,chat,false));
-    requestAnimationFrame(()=>{window.scrollTo({top:pageBottom(),behavior:'auto'});updateJumpLatestVisibility()});
+    requestAnimationFrame(()=>{autoGrow();window.scrollTo({top:pageBottom(),behavior:'auto'});updateJumpLatestVisibility()});
   }
 
   function updateMessage(row,text,details){
@@ -744,10 +744,53 @@
   detailClose.addEventListener('click',()=>detailBackdrop.hidden=true);
   detailBackdrop.addEventListener('click',e=>{if(e.target===detailBackdrop)detailBackdrop.hidden=true});
 
-  form.addEventListener('submit',async e=>{e.preventDefault();const text=question.value.trim();if(!text||!current||sendButton.disabled)return;question.value='';autoGrow();await submitQuestion(text)});
+  // Only the send button starts a new request. Native textarea Enter stays a newline.
+  let questionComposing=false;
+  let compositionEnding=false;
+  let sendStartedDuringComposition=false;
+  form.addEventListener('submit',e=>e.preventDefault());
+  question.addEventListener('compositionstart',()=>{questionComposing=true});
+  question.addEventListener('compositionend',()=>{
+    questionComposing=false;
+    compositionEnding=true;
+    setTimeout(()=>{compositionEnding=false},0);
+    autoGrow();
+  });
+  sendButton.addEventListener('pointerdown',()=>{
+    sendStartedDuringComposition=questionComposing||compositionEnding;
+  });
+  sendButton.addEventListener('click',async()=>{
+    const composing=questionComposing||compositionEnding||sendStartedDuringComposition;
+    sendStartedDuringComposition=false;
+    const text=question.value;
+    if(composing||!text.trim()||!current||sendButton.disabled)return;
+    question.value='';
+    question.dispatchEvent(new Event('input',{bubbles:true}));
+    await submitQuestion(text);
+  });
   question.addEventListener('input',autoGrow);
-  question.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&e.isComposing===false){e.preventDefault();form.requestSubmit()}});
-  function autoGrow(){question.style.height='auto';question.style.height=Math.min(question.scrollHeight,120)+'px'}
+  question.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'||e.isComposing||questionComposing||e.keyCode===229)return;
+    // Some browsers do not insert a newline for modified Enter.
+    if(e.ctrlKey||e.metaKey){
+      e.preventDefault();
+      const {selectionStart:start,selectionEnd:end,maxLength}=question;
+      if(maxLength>=0&&question.value.length-(end-start)+1>maxLength)return;
+      question.setRangeText('\n',start,end,'end');
+      question.dispatchEvent(new Event('input',{bubbles:true}));
+    }
+  });
+  function autoGrow(){
+    const style=getComputedStyle(question);
+    const borders=parseFloat(style.borderTopWidth)+parseFloat(style.borderBottomWidth);
+    const maxHeight=parseFloat(style.lineHeight)*5+parseFloat(style.paddingTop)+parseFloat(style.paddingBottom)+borders;
+    question.style.height='auto';
+    question.style.maxHeight=maxHeight+'px';
+    question.style.height=Math.min(question.scrollHeight+borders,maxHeight)+'px';
+    question.style.overflowY=question.scrollHeight+borders>maxHeight?'auto':'hidden';
+    if(form.offsetHeight)document.documentElement.style.setProperty('--composer-height',form.offsetHeight+'px');
+  }
+  window.addEventListener('resize',autoGrow,{passive:true});
 
   jumpLatestButton?.addEventListener('click',jumpToLatest);
   window.addEventListener('scroll',updateJumpLatestVisibility,{passive:true});
