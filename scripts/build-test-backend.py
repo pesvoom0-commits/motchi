@@ -89,5 +89,8 @@ gas=scope['fix_gas'](gas)
 dedup_scope={}
 exec((root/'scripts/add-response-dedup.py').read_text(),dedup_scope)
 worker=dedup_scope['add_response_dedup'](worker)+'\n'+(root/'backend/response-dedup.js').read_text()
+safety_scope={}
+exec((root/'scripts/add-test-query-safety.py').read_text(),safety_scope)
+worker=safety_scope['add_test_query_safety'](worker)+'\n'+(root/'backend/test-query-safety.js').read_text()
 (out/'worker.mjs').write_text(worker);(out/'Code.gs').write_text(gas)
 print('Built TEST backend sources in '+str(out))
