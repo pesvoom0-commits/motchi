@@ -24,7 +24,7 @@ empty=true;r=await ask('最近何話してた？');assert.equal(r.retrievalDiagn
 fail='getTestTemporalMessages';r=await ask('最近何話してた？');assert.equal(r.retrievalDiagnostics.diagnostics_json.clarification_reason,'evidence_unavailable');fail='';
 fail='getTestWhatsappEvidence';r=await ask('昨日、美砂と実際に何話してた？');assert.equal(r.retrievalDiagnostics.diagnostics_json.clarification_reason,'evidence_unavailable');assert.equal(r.retrievalDiagnostics.retrieval_mode,'whatsapp_text_scan');fail='';
 r=await ask('美砂についてどう考えてる？');assert.equal(r.answer,'洋輔さんから見た美砂さんのこと？');assert.equal(r.retrievalDiagnostics.diagnostics_json.clarification_reason,'ambiguous_intent');assert(!calls.some(x=>x.action==='/responses'));
-r=await ask('うん',[{role:'user',text:'美砂についてどう考えてる？'},{role:'assistant',text:'洋輔さんから見た美砂さんのこと？'}]);assert(r.retrievalDiagnostics.rewrite_query.includes('洋輔さんから見た'));assert.equal(r.retrievalDiagnostics.diagnostics_json.clarification_needed,false);
+r=await ask('うん',[{role:'user',text:'美砂についてどう考えてる？'},{role:'assistant',text:'洋輔さんから見た美砂さんのこと？'}]);assert(r.retrievalDiagnostics.rewrite_query.includes('洋輔さん本人'));assert.equal(r.retrievalDiagnostics.diagnostics_json.clarification_needed,false);
 let d=run('acceptGroundedTestAnswer(testArgs, "美砂の言葉が好きだ。")',{output_text:'根拠のない長い人物解釈'});assert(d.diagnostics.clarification_needed);assert.equal(d.answer,'どの話や場面について知りたい？');
 const history=[{role:'user',text:'今月の話は？'},{role:'assistant',text:'月の相談'}, {role:'user',text:'最近の美砂の話は？'},{role:'assistant',text:'人物について'}, {role:'user',text:'ものづくりは？'},{role:'assistant',text:'作る話'}];
 const draft='現在の原文から確認した重複説明を長く書いた。';let edit;
