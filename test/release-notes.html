@@ -58,6 +58,8 @@
         <li>「今月」「最近」「一番最近」「10月2日」など、時期を指定した質問では対象期間の会話を確認して答えるようになりました。</li>
         <li>「最近、美砂について何か話してた？」のように、時期と話題を組み合わせた質問にも対応しました。</li>
         <li>美砂さんとの実際の会話を聞く質問では、WhatsAppの会話記録を確認して答えるようになりました。</li>
+        <li>「ワイ」「私」「僕」「俺」「うち」など自分を指す質問は、利用者の情報に合わせて検索するようになりました。</li>
+        <li>質問の意味が曖昧な場合や必要な会話を確認できない場合は、推測で埋めず、短い確認質問を返すようになりました。</li>
         <li>続けて同じ内容やその一部を聞いたとき、説明を最初から繰り返さず、聞かれた部分や新しく分かった内容を中心に答えるようになりました。</li>
         <li>返答本文のコピーと、返答詳細の検索情報・質問をまとめたコピーを使い分けられるようになりました。</li>
         <li>検索や記録処理の安定性を改善しました。</li>
@@ -69,8 +71,10 @@
         <li>direct_conversationではwhatsapp_text_scanでWhatsApp原文と前後文脈を一次ソースとして参照します。</li>
         <li>QA_LOGと返答詳細に検索プラン・解決期間・retrieval mode・candidate conversation IDs・原文参照・処理段階のdiagnosticsを記録。QA_LOG保存確認とGoogle/GASの非JSON応答・ロック待機・一時的な通信障害の診断を改善しました。</li>
         <li>standalone contextは回答生成モデル用conversationを0件にし、不要なUI履歴を除外。contextual / follow-upの文脈参照を維持します。</li>
-        <li>検索・原文確認・通常回答の生成後、別処理で直近最大3組のQ&amp;Aを比較。same_answer / subset / superset / related_but_different / new_topicに分類し、duplicate response suppressionで重複説明を削減します。前回答は比較対象だけに使い、検索省略・前回答の事実再利用・回答キャッシュは行いません。</li>
-        <li>QA_LOGのdiagnostics_jsonと既存の検索・取得情報にconversation_relation・compared_history_pairs・previous_question・previous_answer_overlap・overlap_mode・response_dedup_appliedを追加しました。</li>
+        <li>検索・原文確認・通常回答の生成後、別処理で直近最大3組のQ&amp;Aを直前から順に比較。直前が無関係の場合だけ遡り、独立した新質問は古いペアとの意味類似だけで短縮しません。same_answer / subset / superset / related_but_different / new_topicに分類し、duplicate response suppressionで重複説明を削減します。前回答は比較対象だけに使い、検索省略・前回答の事実再利用・回答キャッシュは行いません。</li>
+        <li>QA_LOGのdiagnostics_jsonと既存の検索・取得情報にconversation_relation・compared_history_pairs・previous_question・previous_answer_overlap・overlap_mode・response_dedup_applied・response_rewrite_appliedを追加。重複箇所の削除と観点の書き換えを分けて記録します。</li>
+        <li>自己参照は認証済みユーザー・セッション情報を優先し、TESTセッションのサーバー側プロフィールで補完。original_query / resolved_subject / rewrite_queryで検索前の解決を確認できます。</li>
+        <li>原文0件・空evidence・原文取得エラーでは回答生成を止め、answer_mode=clarificationで短い確認だけを返します。取得失敗と意図・主語の曖昧さをclarification_needed / clarification_reason / clarification_questionで区別します。原文がある回答も引用箇所を検証し、推測による補完を抑えます。</li>
         <li>TESTの長押し本文コピー、返答詳細、一括コピーを併用できるようにしました。ADMINは緑色を維持し、本番サイトへの反映は行っていません。</li>
       </ul>
     </section>
