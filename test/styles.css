@@ -256,3 +256,14 @@ html[data-theme="dark"] .archive-list-return-wrap .return-current{
   background:#3b3e39;
   color:#dedfd9;
 }
+
+/* 2.2.013 TEST identification: only the header ADMIN control gets color. */
+#adminButton{background:#b6dc68;border-color:#6d8d32;color:#243512}
+#adminButton:hover{background:#a5d44c}
+#adminButton:active{background:#94c438}
+#adminButton:focus-visible{outline:3px solid #527621;outline-offset:3px}
+html[data-theme="dark"] #adminButton{background:#425c25;border-color:#85ad4c;color:#e2f3c8}
+html[data-theme="dark"] #adminButton:hover{background:#506e2e}
+html[data-theme="dark"] #adminButton:active{background:#38511d}
+html[data-theme="dark"] #adminButton:focus-visible{outline-color:#b6dc68}
+.detail-answer{white-space:pre-wrap;line-height:1.7;overflow-wrap:anywhere}
