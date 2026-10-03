@@ -72,7 +72,7 @@ gas=replace(gas,'      case "getTestV2Recent": return json_(getTestV2Recent_(bod
       case "getTestTemporalCandidates": return json_(getTestTemporalCandidates_(body));
       case "getTestTemporalMessages": return json_(getTestTemporalMessages_(body));
       case "getTestWhatsappEvidence": return json_(getTestWhatsappEvidence_(body));''')
-gas=replace(gas,'function logTestAnswer_(body) {','function logTestAnswer_(body) {\n  appendTestQaDiagnostics_(body);')
+gas=replace(gas,'function logTestAnswer_(body) {','function logTestAnswer_(body) {\n  const qaReceipt=appendTestQaDiagnostics_(body);')
 gas=replace(gas,'    model:String(body.model || "")\n  }));','    model:String(body.model || ""),\n    retrievalDiagnostics:body.retrievalDiagnostics||null,\n    testDiagnostic:String(body.testDiagnostic||"").slice(0,3000)\n  }));')
 gas=replace(gas,'        model:String(result.model || "")','        model:String(result.model || ""),\n        retrievalDiagnostics:result.retrievalDiagnostics||null,\n        testDiagnostic:result.testDiagnostic||""')
 gas=replace(gas,'        answer:completed.answer || "",\n        model:completed.model || ""','        answer:completed.answer || "",\n        model:completed.model || "",\n        retrievalDiagnostics:completed.retrievalDiagnostics,\n        testDiagnostic:completed.testDiagnostic')
@@ -80,6 +80,11 @@ gas=replace(gas,'  props.setProperty("TESTRES_"+requestId, JSON.stringify({','  
 gas=replace(gas,'    testDiagnostic:String(body.testDiagnostic||"").slice(0,3000)\n  }));','    testDiagnostic:String(body.testDiagnostic||"").slice(0,3000)\n  };\n  if(Utilities.newBlob(JSON.stringify(testResult)).getBytes().length>8000) testResult={state:"completed",createdAtMs:Date.now(),persistedInQa:true};\n  props.setProperty("TESTRES_"+requestId,JSON.stringify(testResult));')
 gas=replace(gas,'      const result = JSON.parse(resultRaw);','      const result = JSON.parse(resultRaw);\n      if(result.persistedInQa)return readTestQaResult_(requestId)||{ok:true,state:"unknown",requestId:requestId};')
 gas=replace(gas,'  return {ok:true,state:"unknown",requestId:requestId};','  return readTestQaResult_(requestId)||{ok:true,state:"unknown",requestId:requestId};')
+gas=replace(gas,'  return {ok:true};\n}\n\nfunction getTestAnswer_', '  return {ok:true,...qaReceipt};\n}\n\nfunction getTestAnswer_')
 gas+='\n'+(root/'backend/temporal.gs').read_text()
+scope={}
+exec((root/'scripts/fix-test-backend.py').read_text(),scope)
+worker=scope['fix_worker'](worker)+'\n'+(root/'backend/test-diagnostics.js').read_text()
+gas=scope['fix_gas'](gas)
 (out/'worker.mjs').write_text(worker);(out/'Code.gs').write_text(gas)
 print('Built TEST backend sources in '+str(out))
