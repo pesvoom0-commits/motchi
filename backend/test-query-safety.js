@@ -4,16 +4,16 @@ function resolveTestQuery(env,prep,question,conversation=[]){
   for(const [candidate,origin] of [[prep?.authenticatedUser?.name,'authenticated_user'],[prep?.session?.user?.name,'session'],[env.TEST_SESSION_USER_NAME,'test_session_profile']]){
     if(typeof candidate==='string'&&candidate.trim()&&candidate.length<=80){name=candidate.trim();source=origin;break;}
   }
-  let query=question;
+  let query=question,clarificationContextResolved=false;
   const last=recentComparisonPairs(conversation).at(-1);
   if(last&&/^(うん|はい|そう|そうです|そうだよ|お願い|よろしく|それで)[。！!\s]*$/.test(query)){
-    if(last.answer==='洋輔さんから見た美砂さんのこと？')query='洋輔さんから見た美砂さんについて、本人はどう考えている？';
+    if(last.answer==='洋輔さんから見た美砂さんのこと？'){query='洋輔さん本人は、美砂さんのことをどう思っていると話していた？';clarificationContextResolved=true;}
     else if(last.answer==='会話を取り直して、もう一度確認してもいい？')query=last.question;
   }
   let selfReference=false;
   // Quoted source speech and plural pronouns are not the current speaker's self-reference.
   query=query.split(/([「『][^」』]*[」』]|"[^"]*")/g).map((part,i)=>i%2?part:part.replace(/(?:ワイ|わい|わたし|わたくし|私|僕|ぼく|俺|おれ|うち)(?=について|のこと|は|が|を|に|と|も|の|って|[、,?？。\s]|$)/g,word=>{selfReference=true;return name||word;})).join('');
-  return {query,unresolved:selfReference&&!name,diagnostics:{original_query:question,resolved_subject:selfReference?(name||null):null,rewrite_query:query,subject_identity_source:selfReference?source:'not_required'}};
+  return {query,unresolved:selfReference&&!name,diagnostics:{original_query:question,resolved_subject:selfReference?(name||null):null,rewrite_query:query,subject_identity_source:selfReference?source:'not_required',clarification_context_resolved:clarificationContextResolved}};
 }
 function testClarification(question,{unresolved=false,evidence='',messageCount=0,evidenceError='',checkEvidence=true}={}){
   const reasons=[];
