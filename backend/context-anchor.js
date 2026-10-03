@@ -7,7 +7,7 @@ function resolveTestContextAnchor(question,conversation=[]){
   if(!contextual||mode!=='local_followup')return result;
   // Only the immediate complete Q&A, never a semantically similar older turn.
   const last=recentComparisonPairs(conversation).at(-1);
-  if(!last||conversation.at(-1)?.role!=='assistant'||last.answer!==conversation.at(-1)?.text)return result;
+  if(!last||conversation.at(-1)?.role!=='assistant'||last.answer!==String(conversation.at(-1)?.text||'').trim())return result;
   const q=question.trim(), reply=last.answer;
   const explicit=/^(?:それ|そこ|その話|その部分|その点|その人|あの人|これ|今の話|今の回答)(?:って|は|を|が|の|について|どう|[、,\s]|$)/.test(q);
   const broad=/^(?:もう少し|もっと|もうちょい)?詳しく(?:教えて)?[？?。\s]*$/.test(q);
@@ -42,7 +42,10 @@ function resolveTestContextAnchor(question,conversation=[]){
   // Bound the reference, and carry only an explicit time scope from the preceding question.
   const anchor=candidates[0];
   const time=last.question.match(/(?:20\d{2}年)?\d{1,2}月(?:\d{1,2}日)?|先月|今月|今年|昨年|昨日|今日|最近|先週|今週/);
-  const scope=time?time[0]+'の会話で挙げられた':'';
+  const priorTopic=last.question.match(/^(.{2,40}?)(?:って|とは|について|の話)/);
+  const sourceNames=[...new Set(reply.match(/じぇみさん|ちゃっぺー師匠|じぇみ|ちゃっぺー/g)||[])];
+  const scopes=[time?.[0],priorTopic?.[1],sourceNames.length===1?sourceNames[0]:null].filter(Boolean);
+  const scope=scopes.length?scopes.join('・')+'の会話で挙げられた':'';
   result.query=`${scope}「${anchor}」について、${question}`;
   Object.assign(d,{context_anchor_found:true,context_anchor_source:'previous_assistant',context_anchor_text:anchor,resolved_query:result.query});
   return result;
