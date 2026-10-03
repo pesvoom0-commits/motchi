@@ -13,6 +13,7 @@ r=resolve('英語の学習方法を具体的に教えて',history(topic));assert
 r=resolve('知らない語って具体的にどんな会話？',history(topic));assert(!r.diagnostics.context_anchor_found);assert(!r.clarificationQuestion);
 r=resolve('英語が多いって具体的にどんな会話？',history('発表の「英語が多い」の話。資料の「英語が多い」の話。'));assert(r.diagnostics.context_anchor_ambiguous);
 r=resolve('英語が多いって具体的にどんな会話してた？',history('じぇみさんと話した。「英語が多い」というコメントの話。','オンラインイベントって具体的にどんな会話してた？'));assert(r.query.includes('オンラインイベント'));assert(r.query.includes('じぇみさん'));
+r=resolve('その人はどう思ってる？',history('美砂さんとあきさんが話してた。'));assert(r.diagnostics.context_anchor_ambiguous);
 let calls=[],logged;
 c.ensureV2TestSearchIndex=async()=>({vectorStoreId:'vs'});
 c.gas=async(_e,b)=>{calls.push(b);if(b.action==='logTestAnswer'){logged=b;return {ok:true};}if(b.action==='getTestV2IndexState')return {vectorStoreId:'vs'};if(b.action==='getTestTemporalCandidates')return {conversations:[{conversationId:'c',conversationDate:'2026-09-12',sourceAi:'gemini'}]};if(b.action==='getTestTemporalMessages'||b.action==='getTestV2Evidence')return {conversations:[{conversationId:'c',conversationDate:'2026-09-12',sourceAi:'gemini'}],messages:[{conversationId:'c',seq:1,role:'yosuke',text:'発表資料は英語が多くて読みづらかった。'}]};if(b.action==='getTestWhatsappEvidence')return {messages:[{date:'2026-09-12',seq:1,speaker:'yosuke',text:'発表資料は英語が多くて読みづらかった。'}],messageRowsRead:1};throw Error(b.action);};
