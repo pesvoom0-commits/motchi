@@ -48,21 +48,36 @@
   <main class="page">
     <a class="back" href="./">もっちをのぞくに戻る</a>
     <h1>リリースノート</h1>
-    <p class="release-policy">すべての変更を同じバージョンの中に新しい順で記録します。開発向けの項目は文頭に「dev」ラベルを付け、本番には公開済みのUXに関わる項目だけを掲載します。</p>
-    <!-- Release policy: This test page is the master. Within each major.minor version,
-         mix shipped UX and development entries in reverse chronological order.
-         Keep patch versions in data-build, not separate headings. Put dev labels at item starts.
-         Production copies only shipped UX entries; omit development and secret features. -->
+    <p class="release-policy">リリースごとに、使い勝手の変更が分かるユーザー向けの内容と、実装・検証のためのDEV情報をまとめています。</p>
+    <!-- Release notes summarize final changes per release with user and DEV sections.
+         Preserve historical entries through 2.2.012. -->
+    <section class="release-block" data-version="2.2.013">
+      <h2>2.2.013 TEST</h2>
+      <h3>ユーザー向け</h3>
+      <ul>
+        <li>「今月」「最近」「一番最近」「10月2日」など、時期を指定した質問では対象期間の会話を確認して答えるようになりました。</li>
+        <li>「最近、美砂について何か話してた？」のように、時期と話題を組み合わせた質問にも対応しました。</li>
+        <li>美砂さんとの実際の会話を聞く質問では、WhatsAppの会話記録を確認して答えるようになりました。</li>
+        <li>続けて同じ内容やその一部を聞いたとき、説明を最初から繰り返さず、聞かれた部分や新しく分かった内容を中心に答えるようになりました。</li>
+        <li>返答本文のコピーと、返答詳細の検索情報・質問をまとめたコピーを使い分けられるようになりました。</li>
+        <li>検索や記録処理の安定性を改善しました。</li>
+      </ul>
+      <h3><span class="dev-label">DEV</span> 開発・検証向け</h3>
+      <ul>
+        <li>ai_personにtemporal_exact / temporal_range / temporal_recent / temporal_latest / temporal_then_semanticを追加。CONVERSATIONSのconversation_dateで期間を絞り、対象conversationのMESSAGES原文を確認します。過去会話の今月・今週・今年は現在日を上限とします。</li>
+        <li>temporal_then_semanticは期間絞り込み後のconversation内で意味検索を実行。通常のsemantic vector検索は維持し、検索ヒットがない場合も取得済み原文を確認します。</li>
+        <li>direct_conversationではwhatsapp_text_scanでWhatsApp原文と前後文脈を一次ソースとして参照します。</li>
+        <li>QA_LOGと返答詳細に検索プラン・解決期間・retrieval mode・candidate conversation IDs・原文参照・処理段階のdiagnosticsを記録。QA_LOG保存確認とGoogle/GASの非JSON応答・ロック待機・一時的な通信障害の診断を改善しました。</li>
+        <li>standalone contextは回答生成モデル用conversationを0件にし、不要なUI履歴を除外。contextual / follow-upの文脈参照を維持します。</li>
+        <li>検索・原文確認・通常回答の生成後、別処理で直近最大3組のQ&amp;Aを比較。same_answer / subset / superset / related_but_different / new_topicに分類し、duplicate response suppressionで重複説明を削減します。前回答は比較対象だけに使い、検索省略・前回答の事実再利用・回答キャッシュは行いません。</li>
+        <li>QA_LOGのdiagnostics_jsonと既存の検索・取得情報にconversation_relation・compared_history_pairs・previous_question・previous_answer_overlap・overlap_mode・response_dedup_appliedを追加しました。</li>
+        <li>TESTの長押し本文コピー、返答詳細、一括コピーを併用できるようにしました。ADMINは緑色を維持し、本番サイトへの反映は行っていません。</li>
+      </ul>
+    </section>
+
     <section class="release-block">
       <h2>v2.2</h2>
       <ul>
-        <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>第1回修正の通信確認：GAS準備処理のロックを状態更新部分に限定しました。Google応答先の一時的な404・500系は読取処理で1回だけ再試行し、GAS呼び出しは60秒を上限に診断します。QA_LOGの実保存行と、exact・今月・最近・最新・semantic・WhatsAppの検索経路を確認しました。</li>
-        <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>第1回修正：長押しの本文コピーを復活し、返答詳細の一括コピーと併用できます。ADMINの緑色は維持しました。</li>
-      <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>過去会話の今月・今週・今年は現在日を上限にし、standalone回答へ過去のUI会話を渡さないようにしました。文脈を引き継ぐ質問の処理は維持しています。</li>
-      <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>TESTのApps Script応答をJSON解析前に検証し、状態・形式・リダイレクト・処理段階を診断できるようにしました。QA_LOG保存は実行後に確認し、通信・保存エラーをJSONで返します。</li>
-      <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>日付・期間・最近・最新の質問を、会話の日付で絞ってから原文を確認する検索に変更しました。最近は直近7日、ここ数日は直近3日、先週は月曜〜日曜として解決します。時間と話題を含む質問では、対象会話内だけで意味検索します。</li>
-        <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>二人の実際の会話を聞く質問はWhatsApp原文と前後文脈を参照します。検索プラン・期間・候補会話・原文参照・検索省略を返答詳細とQA_LOGに保存します。過去のログは補完しません。</li>
-        <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>返答本文・検索情報・リクエストを1ボタンでコピーできるようになりました。TESTのADMINボタンを緑色に変更しました。本番の回答処理・配色・利用回数は変更していません。</li>
         <li data-audience="user" data-build="2.2.012">チャット入力中に改行でき、送信ボタンを押したときだけ送信できるようになりました</li>
         <li data-audience="development" data-build="2.2.012"><span class="dev-label">dev</span>入力欄が文章に合わせて広がり、複数行のメッセージを書きやすくなりました</li>
         <li data-audience="development" data-build="2.2.011"><span class="dev-label">dev</span>類似質問への返答・質問履歴参照の試行（2.2.006〜2.2.010）を取り消し、試行開始前の返答を使えるようになりました。会話履歴と、それ以前の表示調整はそのままです。</li>
