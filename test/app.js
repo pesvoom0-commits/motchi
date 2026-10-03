@@ -57,7 +57,6 @@
   const detailBackdrop=$('detailBackdrop');
   const detailClose=$('detailClose');
   const detailMeta=$('detailMeta');
-  const detailAnswerCopyButton=$('detailAnswerCopyButton');
   const detailCopyButton=$('detailCopyButton');
   const detailDiagnostic=$('detailDiagnostic');
   const detailRequest=$('detailRequest');
@@ -315,6 +314,7 @@
   function openMessageMenu(){
     if(!selectedMessage)return;
     detailAction.hidden=selectedMessage.legacy||selectedMessage.item.kind!=='ai'||selectedMessage.index<0;
+    copyAction.hidden=selectedMessage.item.kind==='ai'&&!selectedMessage.legacy;
     messageMenuBackdrop.hidden=false;
   }
   function closeMessageMenu(){messageMenuBackdrop.hidden=true}
@@ -359,6 +359,7 @@
     detailMeta.innerHTML='';
     const pairs=[['応答時間',d.responseMs?`${d.responseMs} ms`:'—'],['Request ID',d.requestId||'—'],['モデル',d.model||model]];
     pairs.forEach(([k,v])=>{const dt=document.createElement('dt');dt.textContent=k;const dd=document.createElement('dd');dd.textContent=v;detailMeta.append(dt,dd)});
+    $('detailAnswer').textContent=item.text||'';
     detailDiagnostic.textContent=d.testDiagnostic||'現行APIから構造化された検索・取得情報はまだ返っていません。';
     detailRequest.textContent=JSON.stringify(d.request||{},null,2);
     detailBackdrop.hidden=false;
@@ -369,15 +370,16 @@
     if(!item)return '';
     const d=item.details||{};
     return [
-      '返答詳細',
+      String(item.text||''),
+      '',
       `応答時間: ${d.responseMs?`${d.responseMs} ms`:'—'}`,
       `Request ID: ${d.requestId||'—'}`,
       `モデル: ${d.model||model}`,
       '',
-      '検索・取得情報',
+      '### 検索・取得情報',
       d.testDiagnostic||'現行APIから構造化された検索・取得情報はまだ返っていません。',
       '',
-      'リクエスト',
+      '### リクエスト',
       JSON.stringify(d.request||{},null,2)
     ].join('\n');
   }
@@ -398,24 +400,6 @@
       ta.remove();
     }
     showToast('返答詳細をコピーしました');
-  }
-
-  async function copyDetailAnswer(){
-    const text=String(selectedMessage?.item?.text||'');
-    if(!text)return;
-    try{
-      await navigator.clipboard.writeText(text);
-    }catch(_){
-      const ta=document.createElement('textarea');
-      ta.value=text;
-      ta.style.position='fixed';
-      ta.style.opacity='0';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      ta.remove();
-    }
-    showToast('回答本文をコピーしました');
   }
 
   function setModel(value){
@@ -476,7 +460,7 @@
 
   function completeAnswer(row,pending,data){
     const responseMs=Date.now()-pending.startedAt;
-    const details={requestId:pending.requestId,responseMs,model:pending.model||model,testDiagnostic:data.testDiagnostic||pending.testDiagnostic||'',request:pending.request||{}};
+    const details={requestId:pending.requestId,responseMs,model:pending.model||model,testDiagnostic:data.testDiagnostic||pending.testDiagnostic||'',retrievalDiagnostics:data.retrievalDiagnostics||null,request:pending.request||{}};
     const answer=data.answer||'返事が空っぽでした'; updateMessage(row,answer,details); clearPending(); lastSync.textContent=new Date().toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}); return true;
   }
 
@@ -731,7 +715,6 @@
   detailAction.addEventListener('click',()=>{closeMessageMenu();openDetail()});
   menuCancel.addEventListener('click',closeMessageMenu);
   messageMenuBackdrop.addEventListener('click',e=>{if(e.target===messageMenuBackdrop)closeMessageMenu()});
-  detailAnswerCopyButton?.addEventListener('click',copyDetailAnswer);
   detailCopyButton?.addEventListener('click',copyDetailInfo);
   detailClose.addEventListener('click',()=>detailBackdrop.hidden=true);
   detailBackdrop.addEventListener('click',e=>{if(e.target===detailBackdrop)detailBackdrop.hidden=true});
