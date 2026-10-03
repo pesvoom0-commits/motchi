@@ -24,6 +24,8 @@ function buildTemporalSearchPlan(question,currentDate) {
     const start=/中旬/.test(s)?11:/下旬/.test(s)?21:1;
     const finish=/月末|月?末まで|下旬/.test(s)?end:/上旬/.test(s)?10:/中旬/.test(s)?20:end;
     from=key(yy,mm,start);to=key(yy,mm,finish);
+  } else if(/今年/.test(s)){
+    mode='range';from=key(y,1,1);to=currentDate;
   } else if(dates.length || /一昨日|昨日|今日/.test(s)){
     mode='exact';from=to=dates[0]||shiftDateKey(base,/一昨日/.test(s)?-2:/昨日/.test(s)?-1:0);
   } else if(/最後に|一番最近|最新|直近\s*1\s*件|最後の/.test(s)){
@@ -39,7 +41,7 @@ function buildTemporalSearchPlan(question,currentDate) {
     .replace(/(?:(20\d{2})[年/\-])?\d{1,2}[月/\-]\d{1,2}日?/g,' ')
     .replace(/(?:(20\d{2})年)?\d{1,2}月/g,' ')
     .replace(/(?:ここ|過去|直近)\s*\d+\s*(?:日|件)/g,' ')
-    .replace(/最近|直近|近ごろ|ここ数日|この数日|一番最近|最後に|最後の|最新|先週|今週|先月|今月|一昨日|昨日|今日|上旬|中旬|下旬|月末|月?末まで|から|まで/g,' ')
+    .replace(/最近|直近|近ごろ|ここ数日|この数日|一番最近|最後に|最後の|最新|先週|今週|先月|今月|今年|一昨日|昨日|今日|上旬|中旬|下旬|月末|月?末まで|から|まで/g,' ')
     .replace(/ちゃっぺー師匠|ちゃっぺー|じぇみさん|じぇみ|ChatGPT|Gemini|AI|洋輔さん|洋輔|もっちー|もっち/g,' ')
     .replace(/について|のことで|のこと|何を|何か|何|なに|一番|相談(?:内容)?|話(?:してた|した|してる|していた|して|す|し|た)?|考えて(?:た|る)|どう|まとめて|教えて|振り返って|実際に|内容|会話|やりとり|してた|していた|してる|した|あった|ある|どんな|だった|ですか/g,' ')
     .replace(/[\s、。？?！!はをにとでがのもへ]+/g,' ').trim();
