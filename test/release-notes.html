@@ -56,6 +56,7 @@
     <section class="release-block">
       <h2>v2.2</h2>
       <ul>
+        <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>第1回修正の通信確認：GAS準備処理のロックを状態更新部分に限定しました。Google応答先の一時的な404・500系は読取処理で1回だけ再試行し、GAS呼び出しは60秒を上限に診断します。QA_LOGの実保存行と、exact・今月・最近・最新・semantic・WhatsAppの検索経路を確認しました。</li>
         <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>第1回修正：長押しの本文コピーを復活し、返答詳細の一括コピーと併用できます。ADMINの緑色は維持しました。</li>
       <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>過去会話の今月・今週・今年は現在日を上限にし、standalone回答へ過去のUI会話を渡さないようにしました。文脈を引き継ぐ質問の処理は維持しています。</li>
       <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>TESTのApps Script応答をJSON解析前に検証し、状態・形式・リダイレクト・処理段階を診断できるようにしました。QA_LOG保存は実行後に確認し、通信・保存エラーをJSONで返します。</li>
