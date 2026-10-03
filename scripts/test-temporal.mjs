@@ -6,6 +6,9 @@ const context=vm.createContext({console,Response,URL,URLSearchParams,Date,Map,Se
 vm.runInContext(code,context);
 const plan=q=>JSON.parse(vm.runInContext(`JSON.stringify(buildTemporalSearchPlan(${JSON.stringify(q)},'2026-10-03'))`,context));
 const cases=[
+ ['今月もっちは何話してた？','temporal_range','2026-10-01','2026-10-31'],
+ ['今週何話してた？','temporal_range','2026-09-28','2026-10-03'],
+ ['今年何話してた？','temporal_range','2026-01-01','2026-10-03'],
  ['最近何相談してた？','temporal_recent','2026-09-27','2026-10-03'],
  ['最近、美砂について何か話してた？','temporal_then_semantic','2026-09-27','2026-10-03'],
  ['10月2日は何相談してた？','temporal_exact','2026-10-02','2026-10-02'],
@@ -49,4 +52,9 @@ result=await ask('美砂についてどう考えてる？');assert.equal(result.
 result=await ask('最近何相談してた？',false);assert.equal(calls[0].action,'index');assert(!result.retrievalDiagnostics);assert.equal(logged.action,'logAnswer');
 result=await ask('あなたは誰？');assert.equal(result.retrievalDiagnostics.answer_mode,'fixed_route');assert.equal(logged.action,'logTestAnswer');
 assert(!fs.readFileSync('test/index.html','utf8').includes('detailAnswerCopyButton'));assert(fs.readFileSync('test/app.js','utf8').includes("'### 検索・取得情報'"));assert(fs.readFileSync('test/app.js','utf8').includes("'### リクエスト'"));assert(!fs.readFileSync('styles.css','utf8').includes('#adminButton{background:#b6dc68'));
-console.log('PASS: 13 date/topic cases + 9 retrieval/routing/regression scenarios + UI invariants');
+result=await ask('今月もっちは何話してた？');assert.equal(result.retrievalDiagnostics.resolved_time_range.to,'2026-10-03');
+context.testPlan={range:{from:'2026-10-01',to:'2026-10-31'}};vm.runInContext("capPastConversationRange(testPlan,'今月の予定は？','2026-10-03')",context);assert.equal(context.testPlan.range.to,'2026-10-31');
+context.args={...context.args,isTest:true,q:'10月2日は何話してた？',conversation:[{role:'user',text:'OLD QUESTION'},{role:'assistant',text:'OLD_CONTRADICTORY_ANSWER'}]};await vm.runInContext('handleV2TestAsk(args)',context);assert(!requestInstructions.includes('OLD_CONTRADICTORY_ANSWER'));assert.equal(logged.retrievalDiagnostics.diagnostics_json.model_conversation_messages,0);
+context.args.q='それについてもっと教えて';await vm.runInContext('handleV2TestAsk(args)',context);assert(requestInstructions.includes('OLD_CONTRADICTORY_ANSWER'));
+assert(fs.readFileSync('test/app.js','utf8').includes('copyAction.hidden=false'));
+console.log('PASS: date/topic cases + 9 retrieval/routing/regression scenarios + UI invariants');
