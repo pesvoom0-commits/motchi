@@ -16,7 +16,7 @@ function getTestTemporalMessages_(body) {
   const data=readAiLogTables_(),ids=Array.isArray(body.conversationIds)?body.conversationIds:[];
   const conversations=[],messages=[];
   ids.forEach(function(id){
-    const c=data.conversationById[id];if(!c||(body.sourceAi&&c.sourceAi!==body.sourceAi))return;
+    const c=data.conversationById[id];if(!c||(body.sourceAi&&c.sourceAi!==body.sourceAi))return {qaLogSaved:true,qaRow:sh.getRange(2,9,sh.getLastRow()-1,1).getDisplayValues().findIndex(function(r){return r[0]===id;})+2,qaRequestId:id};
     conversations.push(c);(data.messagesByConversation[id]||[]).forEach(function(m){messages.push(m);});
   });
   return {ok:true,conversations:conversations,messages:messages};
@@ -58,6 +58,10 @@ function appendTestQaDiagnostics_(body) {
     const d=body.retrievalDiagnostics||{};
     keys.forEach(function(k){const v=d[k];row[index[k]]=v==null?'':typeof v==='object'?JSON.stringify(v):v;});
     row[index.test_mode]=true;sh.appendRow(row);
+    SpreadsheetApp.flush();
+    const savedRow=sh.getLastRow();
+    if(String(sh.getRange(savedRow,9).getValue())!==id)throw new Error("QA_LOG write verification failed");
+    return {qaLogSaved:true,qaRow:savedRow,qaRequestId:id};
   }finally{lock.releaseLock();}
 }
 
