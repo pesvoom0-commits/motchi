@@ -35,7 +35,7 @@ def fix_worker(worker):
     sub('  timing.prompt_build = Date.now()-promptBuildStartedAt;','  timing.prompt_build = Date.now()-promptBuildStartedAt;\n  markTestStage(env,"prompt_built");')
     sub('      finalData = await openaiJson(env,"/responses",{','      markTestStage(env,"answer_generation");\n      finalData = await openaiJson(env,"/responses",{',2)
     sub('    answer = normalizeV2ConversationalAnswer(extractText(finalData));','    markTestStage(env,"model_response_received");\n    answer = normalizeV2ConversationalAnswer(extractText(finalData));')
-    sub('  let logError = "";\n  {','''  if(isTest)retrievalDiagnostics.diagnostics_json.timings={...timing,before_log:totalBeforeLog};
+    sub('  let logError = "";\n  {','''  if(isTest)retrievalDiagnostics.diagnostics_json.timings={...timing,test_log:null,before_log:totalBeforeLog};
   let logError = "";
   markTestStage(env,'qa_log_save');
   {''')
@@ -52,6 +52,7 @@ def fix_worker(worker):
   diagnosticParts.push(`timing_test_log_ms=${timing.test_log}`);''')
     sub('        stage:String(e?.testStage||"v2_unknown")','''        stage:String(e?.testStage||env.__testTrace?.stage||"v2_unknown"),
         ...(isTest?{testDiagnostic:formatTestTrace(env.__testTrace),transport:e.transport||null}:{})''')
+    sub('    diagnosticParts.push(`log_error=${truncate(String(e?.message || e),240)}`);',"    if(isTest){e.testStage='qa_log_save';throw e;}\n    diagnosticParts.push(`log_error=${truncate(String(e?.message || e),240)}`);")
     # TEST calls: bounded HTTP, explicit Apps Script content redirect and actionable error metadata.
     sub('  const r = await fetch(env.GAS_ENDPOINT,{','  if(env.__testTrace)return await testGasRequest(env,payload);\n  const r = await fetch(env.GAS_ENDPOINT,{')
     sub('  const candidates=await gas(env,','  markTestStage(env,"conversation_fetch");\n  const candidates=await gas(env,')
