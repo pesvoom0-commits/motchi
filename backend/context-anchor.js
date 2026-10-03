@@ -21,7 +21,7 @@ function resolveTestContextAnchor(question,conversation=[]){
     candidates=topicUnits.filter(s=>s.includes(term));
     // Multiple appearances, even with the same keyword, require a choice.
   }else if(/^(?:その人|あの人)/.test(q)){
-    candidates=[...new Set(reply.split(/[と、。\s]/).flatMap(s=>s.match(/[一-龯ァ-ヶ]{1,12}(?:さん|氏|先生)/g)||[]))];
+    candidates=[...new Set(reply.match(/[一-龯ぁ-んァ-ヶA-Za-z]{1,24}?(?:さん|氏|先生)/g)||[])];
   }else {
     candidates=topicUnits;
     // A single sentence can still enumerate several topics. Do not resolve it as one.
@@ -39,7 +39,7 @@ function resolveTestContextAnchor(question,conversation=[]){
     return result;
   }
   if(candidates.length!==1)return result;
-  // Bound the reference, and carry only an explicit time scope from the preceding question.
+  // Carry explicit topic/time/source scope only; these are search constraints, not facts.
   const anchor=candidates[0];
   const time=last.question.match(/(?:20\d{2}年)?\d{1,2}月(?:\d{1,2}日)?|先月|今月|今年|昨年|昨日|今日|最近|先週|今週/);
   const priorTopic=last.question.match(/^(.{2,40}?)(?:って|とは|について|の話)/);
