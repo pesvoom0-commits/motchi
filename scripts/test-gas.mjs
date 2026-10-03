@@ -1,0 +1,15 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const old=[['timestamp','date','question','answer','model','input_tokens','output_tokens','status','session_id','source_refs'],['OLD_TS','OLD_DATE','old question','old answer','old',1,2,'ok','old-session','old-refs']];
+let values=structuredClone(old),props={},rowsAppended=0;
+const sheet={getLastColumn:()=>values[0].length,getMaxColumns:()=>50,getLastRow:()=>values.length,getDataRange:()=>({getDisplayValues:()=>values.map(r=>r.map(String))}),getRange:(r,c,h,w)=>({getDisplayValues:()=>values.slice(r-1,r-1+h).map(row=>Array.from({length:w},(_,i)=>String(row[c-1+i]??''))),setValues:rows=>{rows.forEach((row,i)=>values[r-1+i]=row)}}),appendRow:r=>{values.push(r);rowsAppended++}};
+const context=vm.createContext({Date,console,Utilities:{newBlob:s=>({getBytes:()=>Buffer.from(s)}),formatDate:()=> '2026-10-03'},LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})},SpreadsheetApp:{openById:()=>({getSheetByName:()=>sheet})},PropertiesService:{getScriptProperties:()=>({getProperty:k=>props[k],setProperty:(k,v)=>props[k]=v,deleteProperty:k=>delete props[k]})}});
+vm.runInContext(fs.readFileSync((process.argv[2]||'/private/tmp/motchi-2.2.013')+'/Code.gs','utf8'),context);
+const d={route:'ai_person',question_pattern:'temporal_recent',answer_mode:'generated',temporal_mode:'recent',resolved_time_range:{from:'2026-09-27',to:'2026-10-03'},retrieval_mode:'conversation_date',candidate_conversation_ids:['c1'],vector_result_count:0,retrieval_skipped:true,rewrite_query:null,similar_question_refs:null,diagnostics_json:{search_plan:'temporal_recent',message_rows_read:3}};
+context.body={requestId:'req1',question:'最近何相談してた？',answer:'answer',model:'test',retrievalDiagnostics:d};
+vm.runInContext('logTestAnswer_(body)',context);assert.equal(rowsAppended,1);assert.deepEqual(values[1],old[1]);assert.equal(values[2][8],'TEST_req1');assert(values[0].includes('diagnostics_json'));assert.equal(values[2][values[0].indexOf('route')],'ai_person');
+vm.runInContext('logTestAnswer_(body)',context);assert.equal(rowsAppended,1);
+let recovered=vm.runInContext("getTestAnswer_('req1')",context);assert.equal(recovered.retrievalDiagnostics.diagnostics_json.message_rows_read,3);
+props={};recovered=vm.runInContext("getTestAnswer_('req1')",context);assert.equal(recovered.answer,'answer');assert.equal(recovered.retrievalDiagnostics.temporal_mode,'recent');assert.equal(recovered.retrievalDiagnostics.retrieval_skipped,true);
+context.body={...context.body,requestId:'req2',answer:'長い回答'.repeat(1500)};vm.runInContext('logTestAnswer_(body)',context);assert(JSON.parse(props.TESTRES_req2).persistedInQa);assert.equal(vm.runInContext("getTestAnswer_('req2')",context).answer,context.body.answer);
+assert.deepEqual(values[1],old[1]);
+console.log('PASS: additive QA_LOG migration, measured TEST logging, idempotency, cache/Sheet recovery, large-answer cache safety, historical rows preserved');
