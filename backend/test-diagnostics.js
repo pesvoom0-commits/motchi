@@ -7,23 +7,24 @@ function capPastConversationRange(plan,question,currentDate){
 }
 async function testGasRequest(env,payload){
   const action=String(payload.action||'');
-  const canRetry=action==='logTestAnswer'; // idempotent QA row and cached result
+  const canRetry=['logTestAnswer','getTestTemporalCandidates','getTestTemporalMessages','getTestWhatsappEvidence','getTestAnswer'].includes(action); // idempotent log or read-only actions
   for(let attempt=0;attempt<(canRetry?2:1);attempt++){
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),30000);
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),60000);
     const endpoint=new URL(env.GAS_ENDPOINT);
-    let r,redirects=0;
+    let r,redirects=0,redirectHosts=[],blockedRedirectHost=null;
     try{
       r=await fetch(endpoint.href,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,secret:env.GAS_SHARED_SECRET}),redirect:'manual',signal:controller.signal});
       while([301,302,303,307,308].includes(r.status)&&redirects<3){
         const location=r.headers.get('Location');if(!location)break;
         const next=new URL(location,r.url||endpoint.href);
-        if(next.protocol!=='https:'||next.hostname!=='script.googleusercontent.com')break;
+        redirectHosts.push(next.hostname);
+        if(next.protocol!=='https:'||!['script.googleusercontent.com','script.google.com'].includes(next.hostname)){blockedRedirectHost=next.hostname;break;}
         redirects++;r=await fetch(next.href,{method:'GET',redirect:'manual',signal:controller.signal});
       }
       const type=r.headers.get('Content-Type')||'',raw=await r.text();
       // Drop HTML tokens/query strings from the diagnostic excerpt.
       const prefix=raw.slice(0,240).replace(/https?:\/\/[^\s"'<>]+/g,'[url]').replace(/[\r\n]+/g,' ');
-      const info={action,endpoint_host:endpoint.hostname,endpoint_kind:/\/exec$/.test(endpoint.pathname)?'exec':'unexpected',status:r.status,content_type:type,redirects,response_prefix:/^\s*</.test(raw)?prefix:'[non-HTML response]'};
+      const info={action,endpoint_host:endpoint.hostname,endpoint_kind:/\/exec$/.test(endpoint.pathname)?'exec':'unexpected',status:r.status,content_type:type,redirects,redirect_hosts:redirectHosts,blocked_redirect_host:blockedRedirectHost,response_prefix:/^\s*</.test(raw)?prefix:'[non-HTML response]'};
       if(!r.ok||!/(?:application\/json|text\/json)/i.test(type)||!/^\s*[{[]/.test(raw)){
         const e=new Error('Apps Script response: '+JSON.stringify(info));e.transport=info;e.testStage=env.__testTrace.stage;throw e;
       }
@@ -33,9 +34,9 @@ async function testGasRequest(env,payload){
       if(env.__testTrace){env.__testTrace.gasResponses ||= [];env.__testTrace.gasResponses.push({...info,response_prefix:'[JSON]',qa_row:d.qaRow});}
       return d;
     }catch(e){
-      if(e.name==='AbortError'){e=new Error('Apps Script timeout (30000 ms): '+action);e.testStage=env.__testTrace.stage;}
+      if(e.name==='AbortError'){e=new Error('Apps Script timeout (60000 ms): '+action);e.testStage=env.__testTrace.stage;}
       console.error(JSON.stringify({test:true,stage:env.__testTrace.stage,action,error:String(e.message||e),transport:e.transport||null}));
-      if(attempt+1===(canRetry?2:1))throw e;
+      if(attempt+1===(canRetry?2:1)||action!=='logTestAnswer'&&!(e.transport&&(e.transport.status===404||e.transport.status===429||e.transport.status>=500)))throw e;
     }finally{clearTimeout(timer);}
   }
 }
