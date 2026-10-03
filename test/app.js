@@ -314,7 +314,7 @@
   function openMessageMenu(){
     if(!selectedMessage)return;
     detailAction.hidden=selectedMessage.legacy||selectedMessage.item.kind!=='ai'||selectedMessage.index<0;
-    copyAction.hidden=selectedMessage.item.kind==='ai'&&!selectedMessage.legacy;
+    copyAction.hidden=false;
     messageMenuBackdrop.hidden=false;
   }
   function closeMessageMenu(){messageMenuBackdrop.hidden=true}
@@ -411,11 +411,12 @@
     if(!base)throw new Error('API接続先が設定されていません。');
     const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeoutMs);
     let res;try{res=await fetch(base+path,{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify(body),signal:controller.signal})}finally{clearTimeout(timer)}
-    let data={};try{data=await res.json()}catch(_){}
+    const raw=await res.text(); let data={};
+    try{data=JSON.parse(raw)}catch(_){const e=new Error('APIの応答形式が不正です');e.status=res.status;e.stage='http_response_parse';e.detail=`status=${res.status} content_type=${res.headers.get('Content-Type')||''} prefix=${raw.slice(0,180)}`;throw e}
     if(!res.ok&&res.status!==202){
       const err=new Error(data.error||'通信に失敗しました');
       err.status=res.status;
-      err.detail=String(data.detail||'');
+      err.detail=[data.detail,data.testDiagnostic,data.transport?JSON.stringify(data.transport):''].filter(Boolean).join('\n');
       err.stage=String(data.stage||'');
       throw err
     }
