@@ -1,0 +1,24 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const c=vm.createContext({console,Response,URL,URLSearchParams,Date,Map,Set,Number,JSON,TextEncoder,setTimeout});
+vm.runInContext(fs.readFileSync((process.argv[2]||'/private/tmp/motchi-context-anchor')+'/worker.mjs','utf8').replace('export default','const worker='),c);
+const history=(answer,q='先月、美砂さんと何話してた？')=>[{role:'user',text:q},{role:'assistant',text:answer}];
+const resolve=(q,h)=>{c.args={q,h};return vm.runInContext('resolveTestContextAnchor(args.q,args.h)',c);};
+const topic='仕事中の「英語が多い」発表へのぼやき';
+let r=resolve('英語が多いって具体的にどんな会話してた？',history(topic));assert(r.diagnostics.context_anchor_found);assert.equal(r.diagnostics.context_anchor_text,topic);assert(r.query.includes('先月'));assert.equal(r.diagnostics.context_anchor_source,'previous_assistant');
+r=resolve('それどういう意味？',history('仕事の話。恋愛の話。'));assert(r.diagnostics.context_anchor_ambiguous);assert(!r.diagnostics.context_anchor_found);assert(r.clarificationQuestion.length<40);
+r=resolve('もう少し詳しく',history('「仕事」と「恋愛」の話。'));assert(r.diagnostics.context_anchor_ambiguous);
+r=resolve('その人はどう思ってる？',history('洋輔さんと美砂さんが話してた。'));assert(r.diagnostics.context_anchor_ambiguous);assert.equal(r.clarificationQuestion,'どなたのこと？');
+r=resolve('洋輔さんは何を大切にしてる？',history(topic));assert.equal(r.query,'洋輔さんは何を大切にしてる？');assert(!r.diagnostics.context_anchor_found);
+r=resolve('英語の学習方法を具体的に教えて',history(topic));assert(!r.diagnostics.context_anchor_found);assert(!r.clarificationQuestion);
+r=resolve('知らない語って具体的にどんな会話？',history(topic));assert(!r.diagnostics.context_anchor_found);assert(!r.clarificationQuestion);
+r=resolve('英語が多いって具体的にどんな会話？',history('発表の「英語が多い」の話。資料の「英語が多い」の話。'));assert(r.diagnostics.context_anchor_ambiguous);
+let calls=[],logged;
+c.ensureV2TestSearchIndex=async()=>({vectorStoreId:'vs'});
+c.gas=async(_e,b)=>{calls.push(b);if(b.action==='logTestAnswer'){logged=b;return {ok:true};}if(b.action==='getTestV2IndexState')return {vectorStoreId:'vs'};if(b.action==='getTestTemporalCandidates')return {conversations:[{conversationId:'c',conversationDate:'2026-09-12',sourceAi:'gemini'}]};if(b.action==='getTestTemporalMessages'||b.action==='getTestV2Evidence')return {conversations:[{conversationId:'c',conversationDate:'2026-09-12',sourceAi:'gemini'}],messages:[{conversationId:'c',seq:1,role:'yosuke',text:'発表資料は英語が多くて読みづらかった。'}]};if(b.action==='getTestWhatsappEvidence')return {messages:[{date:'2026-09-12',seq:1,speaker:'yosuke',text:'発表資料は英語が多くて読みづらかった。'}],messageRowsRead:1};throw Error(b.action);};
+c.openaiJson=async(_e,path,{body})=>{calls.push({action:path,body});if(path.endsWith('/search'))return {data:[{attributes:{conversation_id:'c',start_seq:1,end_seq:1},content:[{type:'text',text:'conversation_id=c seq=1'}]}]};return {output_text:JSON.stringify({clarification_needed:false,answer:'資料が読みづらいという会話だったよ。',evidence_quotes:['発表資料は英語が多くて読みづらかった。']}),usage:{input_tokens:2,output_tokens:3}};};
+c.compareAndReduceTestAnswer=async(_e,{answer})=>({answer,usage:null,diagnostics:{response_dedup_applied:false,response_rewrite_applied:false}});
+async function ask(q,h){calls=[];c.args={env:{TEST_SESSION_USER_NAME:'美砂'},cors:{},body:{},q,conversation:h,prep:{requestId:'test',currentDateJst:'2026-10-04'},isTest:true};return JSON.parse(await(await vm.runInContext('handleV2TestAsk(args)',c)).text());}
+r=await ask('英語が多いって具体的にどんな会話してた？',history(topic));assert(r.retrievalDiagnostics.diagnostics_json.context_anchor_found);assert.equal(r.retrievalDiagnostics.diagnostics_json.clarification_needed,false);assert(calls.some(x=>['getTestTemporalMessages','getTestV2Evidence','getTestWhatsappEvidence'].includes(x.action)));assert(calls.some(x=>x.action==='/responses'));assert.equal(logged.question,'英語が多いって具体的にどんな会話してた？');assert(logged.testDiagnostic.includes('context_anchor_source=previous_assistant'));
+r=await ask('それどういう意味？',history('仕事の話。恋愛の話。'));assert.equal(r.retrievalDiagnostics.answer_mode,'clarification');assert(r.retrievalDiagnostics.diagnostics_json.context_anchor_ambiguous);assert(!calls.some(x=>x.action==='/responses'||x.action.endsWith('/search')));assert.equal(logged.question,'それどういう意味？');
+r=await ask('洋輔さんは何を大切にしてる？',history(topic));assert(!r.retrievalDiagnostics.diagnostics_json.context_anchor_found);assert(calls.some(x=>x.action.endsWith('/search')));assert.equal(r.retrievalDiagnostics.rewrite_query,'洋輔さんは何を大切にしてる？');
+console.log('PASS: A unique anchor + fresh originals + generation; B ambiguous topics/person + short clarification; C independent query + normal search; zero candidates fallback and duplicate keyword ambiguity');
