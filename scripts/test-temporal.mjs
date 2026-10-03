@@ -39,7 +39,7 @@ context.gas=async(_env,b)=>{calls.push(b);switch(b.action){
  default:throw new Error('unexpected gas '+b.action);
 }};
 context.ensureV2TestSearchIndex=async()=>{calls.push({action:'index'});return {vectorStoreId:'vs'};};
-context.openaiJson=async(_env,path,options)=>{calls.push({action:path,body:options?.body});if(path.endsWith('/search'))return {data:[]};requestInstructions=options.body.instructions;return {output_text:'テスト用回答',model:'test',usage:{input_tokens:1,output_tokens:1}};};
+context.openaiJson=async(_env,path,options)=>{calls.push({action:path,body:options?.body});if(path.endsWith('/search'))return {data:[]};if(options.body.instructions.includes('回答編集担当'))return {output_text:JSON.stringify({relation:'new_topic',compared_pair_index:-1,overlap_mode:'none',previous_answer_overlap:'no',response_dedup_applied:false,answer:'テスト用回答'})};requestInstructions=options.body.instructions;return {output_text:'テスト用回答',model:'test',usage:{input_tokens:1,output_tokens:1}};};
 async function ask(q,isTest=true){calls=[];logged=null;context.args={env:{},cors:{},body:{model:'luna'},q,conversation:[],prep:{currentDateJst:'2026-10-03',requestId:'test1',character:'ORIGINAL_CHARACTER',aiRules:'RULES'},isTest};return JSON.parse(await(await vm.runInContext('handleV2TestAsk(args)',context)).text());}
 let result=await ask('最近何相談してた？');
 assert.deepEqual(calls.slice(0,2).map(x=>x.action),['getTestTemporalCandidates','getTestTemporalMessages']);assert(!calls.some(x=>x.action.endsWith('/search')));assert.equal(result.retrievalDiagnostics.diagnostics_json.message_rows_read,6);assert(requestInstructions.includes('ORIGINAL_CHARACTER'));assert(requestInstructions.includes('[seq=3'));
