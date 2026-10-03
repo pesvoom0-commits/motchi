@@ -92,5 +92,8 @@ worker=dedup_scope['add_response_dedup'](worker)+'\n'+(root/'backend/response-de
 safety_scope={}
 exec((root/'scripts/add-test-query-safety.py').read_text(),safety_scope)
 worker=safety_scope['add_test_query_safety'](worker)+'\n'+(root/'backend/test-query-safety.js').read_text()
+anchor_scope={}
+exec((root/'scripts/add-context-anchor.py').read_text(),anchor_scope)
+worker=anchor_scope['add_context_anchor'](worker)+'\n'+(root/'backend/context-anchor.js').read_text()
 (out/'worker.mjs').write_text(worker);(out/'Code.gs').write_text(gas)
 print('Built TEST backend sources in '+str(out))
