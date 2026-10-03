@@ -56,7 +56,10 @@
     <section class="release-block">
       <h2>v2.2</h2>
       <ul>
-        <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>日付・期間・最近・最新の質問を、会話の日付で絞ってから原文を確認する検索に変更しました。最近は直近7日、ここ数日は直近3日、先週は月曜〜日曜として解決します。時間と話題を含む質問では、対象会話内だけで意味検索します。</li>
+        <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>第1回修正：長押しの本文コピーを復活し、返答詳細の一括コピーと併用できます。ADMINの緑色は維持しました。</li>
+      <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>過去会話の今月・今週・今年は現在日を上限にし、standalone回答へ過去のUI会話を渡さないようにしました。文脈を引き継ぐ質問の処理は維持しています。</li>
+      <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>TESTのApps Script応答をJSON解析前に検証し、状態・形式・リダイレクト・処理段階を診断できるようにしました。QA_LOG保存は実行後に確認し、通信・保存エラーをJSONで返します。</li>
+      <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>日付・期間・最近・最新の質問を、会話の日付で絞ってから原文を確認する検索に変更しました。最近は直近7日、ここ数日は直近3日、先週は月曜〜日曜として解決します。時間と話題を含む質問では、対象会話内だけで意味検索します。</li>
         <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>二人の実際の会話を聞く質問はWhatsApp原文と前後文脈を参照します。検索プラン・期間・候補会話・原文参照・検索省略を返答詳細とQA_LOGに保存します。過去のログは補完しません。</li>
         <li data-audience="development" data-build="2.2.013"><span class="dev-label">dev</span>返答本文・検索情報・リクエストを1ボタンでコピーできるようになりました。TESTのADMINボタンを緑色に変更しました。本番の回答処理・配色・利用回数は変更していません。</li>
         <li data-audience="user" data-build="2.2.012">チャット入力中に改行でき、送信ボタンを押したときだけ送信できるようになりました</li>
