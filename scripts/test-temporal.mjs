@@ -55,6 +55,7 @@ assert(!fs.readFileSync('test/index.html','utf8').includes('detailAnswerCopyButt
 result=await ask('今月もっちは何話してた？');assert.equal(result.retrievalDiagnostics.resolved_time_range.to,'2026-10-03');
 context.testPlan={range:{from:'2026-10-01',to:'2026-10-31'}};vm.runInContext("capPastConversationRange(testPlan,'今月の予定は？','2026-10-03')",context);assert.equal(context.testPlan.range.to,'2026-10-31');
 context.args={...context.args,isTest:true,q:'10月2日は何話してた？',conversation:[{role:'user',text:'OLD QUESTION'},{role:'assistant',text:'OLD_CONTRADICTORY_ANSWER'}]};await vm.runInContext('handleV2TestAsk(args)',context);assert(!requestInstructions.includes('OLD_CONTRADICTORY_ANSWER'));assert.equal(logged.retrievalDiagnostics.diagnostics_json.model_conversation_messages,0);
-context.args.conversation[1].text='美砂の話 OLD_CONTRADICTORY_ANSWER';context.args.q='美砂の話って具体的にどんな会話してた？';await vm.runInContext('handleV2TestAsk(args)',context);assert(requestInstructions.includes('OLD_CONTRADICTORY_ANSWER'));
+context.args.conversation[1].text='美砂の話 OLD_CONTRADICTORY_ANSWER';context.args.q='美砂の話って具体的にどんな会話してた？';await vm.runInContext('handleV2TestAsk(args)',context);assert(!requestInstructions.includes('OLD_CONTRADICTORY_ANSWER'));assert.equal(logged.retrievalDiagnostics.diagnostics_json.model_conversation_messages,0);
+context.args.q='知らない話って具体的にどんな会話してた？';await vm.runInContext('handleV2TestAsk(args)',context);assert(requestInstructions.includes('OLD_CONTRADICTORY_ANSWER'));assert.equal(logged.retrievalDiagnostics.diagnostics_json.context_anchor_found,false);
 assert(fs.readFileSync('test/app.js','utf8').includes('copyAction.hidden=false'));
 console.log('PASS: date/topic cases + 9 retrieval/routing/regression scenarios + UI invariants');
