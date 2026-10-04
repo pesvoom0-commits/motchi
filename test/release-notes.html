@@ -64,6 +64,8 @@
         <li>直前の返答に出た話題を具体的に聞き直すとき、対象を特定し、その話題と前後の会話記録を優先して確認するようになりました。候補が複数ある場合は短く確認します。</li>
         <li>続けて同じ内容やその一部を聞いたとき、説明を最初から繰り返さず、聞かれた部分や新しく分かった内容を中心に答えるようになりました。</li>
         <li>返答本文のコピーと、返答詳細の検索情報・質問をまとめたコピーを使い分けられるようになりました。</li>
+        <li>必要な会話記録と回答比較に処理を絞り、返答の待ち時間を減らしました。</li>
+        <li>あなた自身について答えるときは、原則「あなた」と呼ぶようになりました。原文引用や記録上の名前は保持します。</li>
         <li>検索や記録処理の安定性を改善しました。</li>
       </ul>
       <h3><span class="dev-label">DEV</span> 開発・検証向け</h3>
@@ -75,9 +77,11 @@
         <li>direct_conversationではwhatsapp_text_scanでWhatsApp原文と前後文脈を一次ソースとして参照します。</li>
         <li>TESTQA_LOGと返答詳細に検索プラン・解決期間・retrieval mode・candidate conversation IDs・原文参照・処理段階のdiagnosticsを記録。TESTQA_LOG保存確認とGoogle/GASの非JSON応答・ロック待機・一時的な通信障害の診断を改善しました。</li>
         <li>standalone contextは回答生成モデル用conversationを0件にし、不要なUI履歴を除外。contextual / follow-upの文脈参照を維持します。</li>
-        <li>検索・原文確認・通常回答の生成後、別処理で直近最大3組のQ&amp;Aを直前から順に比較。直前が無関係の場合だけ遡り、独立した新質問は古いペアとの意味類似だけで短縮しません。same_answer / subset / superset / related_but_different / new_topicに分類し、duplicate response suppressionで重複説明を削減します。前回答は比較対象だけに使い、検索省略・前回答の事実再利用・回答キャッシュは行いません。</li>
+        <li>検索・原文確認・通常回答の生成後、軽量なdedup precheckで比較の必要性を判断。同一質問・期間要約・主題の重なり・明示的follow-upは比較を残し、独立質問・対象の異なるanchor詳細・app_meta・根拠エラー・確認質問・履歴なしは比較モデルをスキップ。必要な場合のみ直近最大3組のQ&amp;Aを直前から順に比較。直前が無関係の場合だけ遡り、独立した新質問は古いペアとの意味類似だけで短縮しません。same_answer / subset / superset / related_but_different / new_topicに分類し、duplicate response suppressionで重複説明を削減します。前回答は比較対象だけに使い、検索省略・前回答の事実再利用・回答キャッシュは行いません。</li>
         <li>TESTQA_LOGのdiagnostics_jsonと既存の検索・取得情報にconversation_relation・compared_history_pairs・previous_question・previous_answer_overlap・overlap_mode・response_dedup_applied・response_rewrite_appliedを追加。重複箇所の削除と観点の書き換えを分けて記録します。</li>
         <li>contextualのlocal_followupでは直前アシスタント回答の語句と一意に一致するcontext anchorを検索前に解決し、resolved_queryで通常の原文検索を再実行。複数候補は確認し、候補0件は従来処理へ戻します。anchor一致原文→同conversationの前後seq（±1）の順に証拠を優先し、離れた意味類似の話題を回答根拠から除外。長い原文内も一致箇所の前2・後1発言へ絞り、一致箇所の引用を検証します。anchor確定後の回答生成にはUI会話履歴を渡しません。context_anchor_source / text / candidates / ambiguous、anchor_evidence_term / match_refs / context_radius / evidence_messages / excluded_messagesを記録し、前回答は事実ソースにしません。</li>
+        <li>一意なcontext anchorではTEST専用getTestAnchorEvidenceで期間・conversation候補を絞り、native literal searchで一致行を特定してseq ±1の原文だけ取得。長い原文は一致発言の前2・後1発言へ絞ります。一致なしは通常のsemantic / temporal_then_semanticへ戻します。anchor_retrieval_strategy / anchor_metadata_rows_scanned / anchor_original_rows_fetchedでメタデータ走査と原文取得を区別。resolved_queryは期間・人物・話題・anchor語句の重複追加を避けます。</li>
+        <li>本人同定と最終回答の表示を分離。認証済みviewer_identityに対応する名前は引用・記録上の話者名・名前そのものの説明・同名人物の区別を保護し、回答本文の本人参照を「あなた」へ変換。viewer_reference_mode / viewer_name_rewrite_applied、dedup_precheck / dedup_comparison_skipped / dedup_skip_reason / response_dedup_msをTEST診断へ記録します。</li>
         <li>自己参照は認証済みユーザー・セッション情報を優先し、TESTセッションのサーバー側プロフィールで補完。original_query / resolved_subject / rewrite_queryで検索前の解決を確認できます。</li>
         <li>原文取得失敗はanswer_mode=evidence_errorとevidence_fetch_errorで記録し、短い取得エラーを返して回答生成を止めます。原文0件はno_evidence、意図・主語の曖昧さはclarificationとして分離。原文取得済みの情報不足では、未指定の日時・人物・話題1点で探せる場合だけ確認します。原文引用を検証し、推測による補完を抑えます。</li>
         <li>TESTの長押し本文コピー、返答詳細、一括コピーを併用できるようにしました。ADMINは緑色を維持し、本番サイトへの反映は行っていません。</li>
