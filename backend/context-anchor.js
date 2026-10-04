@@ -56,6 +56,7 @@ function formatTestContextAnchor(d){return [
   `context_anchor_found=${d.context_anchor_found?'yes':'no'}`,`context_anchor_source=${d.context_anchor_source}`,
   `context_anchor_text=${d.context_anchor_text||'none'}`,`context_anchor_candidates=${JSON.stringify(d.context_anchor_candidates)}`,
   `anchor_evidence_term=${d.anchor_evidence_term||'none'}`,`anchor_match_refs=${JSON.stringify(d.anchor_match_refs||[])}`,`anchor_context_radius=${d.anchor_context_radius??'none'}`,`anchor_evidence_messages=${d.anchor_evidence_messages??0}`,`anchor_excluded_messages=${d.anchor_excluded_messages??0}`,
+  `anchor_original_units_read=${d.anchor_original_units_read??0}`,`anchor_original_units_selected=${d.anchor_original_units_selected??0}`,`anchor_original_chars_selected=${d.anchor_original_chars_selected??0}`,
   `context_anchor_ambiguous=${d.context_anchor_ambiguous?'yes':'no'}`,`resolved_query=${d.resolved_query}`
 ].join('\n');}
 async function ambiguousTestContextReply({env,cors,q,prep,model,queryInfo,anchor}){
