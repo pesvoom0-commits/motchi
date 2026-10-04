@@ -101,5 +101,8 @@ worker=answer_scope['add_test_answer_scope'](worker)+'\n'+(root/'backend/test-an
 qa_scope={}
 exec((root/'scripts/separate-test-qa-log.py').read_text(),qa_scope)
 gas=qa_scope['separate_test_qa_log'](gas,(root/'backend/test-qa-log.gs').read_text())
+speed_scope={}
+exec((root/'scripts/add-test-speed.py').read_text(),speed_scope)
+worker,gas=speed_scope['add_test_speed'](worker,gas,root)
 (out/'worker.mjs').write_text(worker);(out/'Code.gs').write_text(gas)
 print('Built TEST backend sources in '+str(out))
