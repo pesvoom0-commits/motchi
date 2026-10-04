@@ -15,6 +15,25 @@ function selectTestAnchorEvidence(bundle,anchor) {
   const term=anchor.diagnostics.context_anchor_term||anchor.diagnostics.context_anchor_text;
   const rows=Array.isArray(bundle?.messages)?bundle.messages:[];
   const hits=rows.filter(m=>String(m.text||'').includes(term));
-  const messages=rows.filter(m=>hits.some(h=>h.conversationId===m.conversationId&&Number.isFinite(Number(m.seq))&&Math.abs(Number(h.seq)-Number(m.seq))<=1));
-  return {bundle:{...bundle,messages},diagnostics:{anchor_evidence_term:term,anchor_match_refs:hits.map(m=>`${m.conversationId}#${m.seq}`),anchor_context_radius:1,anchor_evidence_messages:messages.length,anchor_excluded_messages:rows.length-messages.length},hits};
+  const candidates=rows.filter(m=>hits.some(h=>h.conversationId===m.conversationId&&Number.isFinite(Number(m.seq))&&Math.abs(Number(h.seq)-Number(m.seq))<=1));
+  const messages=[],quoteHits=[];let unitsRead=0,unitsSelected=0,charsRead=0,charsSelected=0;
+  for(const m of candidates){
+    const text=String(m.text||'');charsRead+=text.length;
+    // A single MESSAGES seq can embed an entire dated WhatsApp transcript.
+    // Bound inside that original message as well as between seqs.
+    const transcript=/\[20\d{2}[/-]\d{1,2}[/-]\d{1,2}\s+\d{1,2}:\d{2}/.test(text);
+    const units=(transcript?text.split(/(?=\[20\d{2}[/-]\d{1,2}[/-]\d{1,2}\s+\d{1,2}:\d{2}(?::\d{2})?\])/):text.split(/\n|(?<=[。！？])/)).map(x=>x.trim()).filter(x=>x.replace(/[\u200e\u200f]/g,'').trim());
+    unitsRead+=units.length;
+    const matches=units.flatMap((u,i)=>u.includes(term)?[i]:[]);
+    if(!matches.length){
+      // Adjacent seq is supplementary only when explicitly referring back to the
+      // utterance, never an entire unrelated analysis of the same conversation.
+      if(text.length<=300&&/そのコメント|このコメント|その発言|この発言/.test(text)){messages.push(m);unitsSelected+=units.length;charsSelected+=text.length;}
+      continue;
+    }
+    const wanted=new Set(matches.flatMap(i=>Array.from({length:4},(_,n)=>i-2+n).filter(j=>j>=0&&j<units.length)));
+    const selected=units.filter((_,i)=>wanted.has(i));const excerpt=selected.join('\n');
+    messages.push({...m,text:excerpt});quoteHits.push({...m,text:matches.map(i=>units[i]).join('\n')});unitsSelected+=selected.length;charsSelected+=excerpt.length;
+  }
+  return {bundle:{...bundle,messages},diagnostics:{anchor_evidence_term:term,anchor_match_refs:hits.map(m=>`${m.conversationId}#${m.seq}`),anchor_context_radius:1,anchor_evidence_messages:messages.length,anchor_excluded_messages:rows.length-messages.length,anchor_original_units_read:unitsRead,anchor_original_units_selected:unitsSelected,anchor_excerpt_before:2,anchor_excerpt_after:1,anchor_original_chars_read:charsRead,anchor_original_chars_selected:charsSelected},hits:quoteHits};
 }
