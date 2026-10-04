@@ -55,28 +55,31 @@
       <h2>2.2.013 TEST</h2>
       <h3>ユーザー向け</h3>
       <ul>
+        <li>「今日は何日？」「今何時？」「今日って何曜日？」などには、会話を検索せず、日本時間の日付・時刻で答えるようになりました。</li>
         <li>「今月」「最近」「一番最近」「10月2日」など、時期を指定した質問では対象期間の会話を確認して答えるようになりました。</li>
         <li>「最近、美砂について何か話してた？」のように、時期と話題を組み合わせた質問にも対応しました。</li>
         <li>美砂さんとの実際の会話を聞く質問では、WhatsAppの会話記録を確認して答えるようになりました。</li>
         <li>「ワイ」「私」「僕」「俺」「うち」など自分を指す質問は、利用者の情報に合わせて検索するようになりました。</li>
-        <li>質問の意味が曖昧な場合や必要な会話を確認できない場合は、推測で埋めず、短い確認質問を返すようになりました。</li>
-        <li>直前の返答に出た話題を具体的に聞き直すとき、対象を特定して会話記録を確認するようになりました。候補が複数ある場合は短く確認します。</li>
+        <li>質問の意味が曖昧な場合は必要な対象だけ短く確認します。記録の取得に失敗した場合は、確認できないことを短く伝え、推測で補わないようになりました。</li>
+        <li>直前の返答に出た話題を具体的に聞き直すとき、対象を特定し、その話題と前後の会話記録を優先して確認するようになりました。候補が複数ある場合は短く確認します。</li>
         <li>続けて同じ内容やその一部を聞いたとき、説明を最初から繰り返さず、聞かれた部分や新しく分かった内容を中心に答えるようになりました。</li>
         <li>返答本文のコピーと、返答詳細の検索情報・質問をまとめたコピーを使い分けられるようになりました。</li>
         <li>検索や記録処理の安定性を改善しました。</li>
       </ul>
       <h3><span class="dev-label">DEV</span> 開発・検証向け</h3>
       <ul>
+        <li>現在の日付・時刻・曜日・月の質問はTESTのapp_meta / current_date_timeとしてtemporal判定より前に固定回答。Asia/Tokyoを使用し、vector・会話原文検索・回答生成モデルを呼びません。</li>
+        <li>TESTの保存・復旧参照は既存TEST endpoint/actionからTESTQA_LOGへ限定。本番QA_LOGへのフォールバックはなく、診断JSONとrequest_idを保持します。</li>
         <li>ai_personにtemporal_exact / temporal_range / temporal_recent / temporal_latest / temporal_then_semanticを追加。CONVERSATIONSのconversation_dateで期間を絞り、対象conversationのMESSAGES原文を確認します。過去会話の今月・今週・今年は現在日を上限とします。</li>
         <li>temporal_then_semanticは期間絞り込み後のconversation内で意味検索を実行。通常のsemantic vector検索は維持し、検索ヒットがない場合も取得済み原文を確認します。</li>
         <li>direct_conversationではwhatsapp_text_scanでWhatsApp原文と前後文脈を一次ソースとして参照します。</li>
-        <li>QA_LOGと返答詳細に検索プラン・解決期間・retrieval mode・candidate conversation IDs・原文参照・処理段階のdiagnosticsを記録。QA_LOG保存確認とGoogle/GASの非JSON応答・ロック待機・一時的な通信障害の診断を改善しました。</li>
+        <li>TESTQA_LOGと返答詳細に検索プラン・解決期間・retrieval mode・candidate conversation IDs・原文参照・処理段階のdiagnosticsを記録。TESTQA_LOG保存確認とGoogle/GASの非JSON応答・ロック待機・一時的な通信障害の診断を改善しました。</li>
         <li>standalone contextは回答生成モデル用conversationを0件にし、不要なUI履歴を除外。contextual / follow-upの文脈参照を維持します。</li>
         <li>検索・原文確認・通常回答の生成後、別処理で直近最大3組のQ&amp;Aを直前から順に比較。直前が無関係の場合だけ遡り、独立した新質問は古いペアとの意味類似だけで短縮しません。same_answer / subset / superset / related_but_different / new_topicに分類し、duplicate response suppressionで重複説明を削減します。前回答は比較対象だけに使い、検索省略・前回答の事実再利用・回答キャッシュは行いません。</li>
-        <li>QA_LOGのdiagnostics_jsonと既存の検索・取得情報にconversation_relation・compared_history_pairs・previous_question・previous_answer_overlap・overlap_mode・response_dedup_applied・response_rewrite_appliedを追加。重複箇所の削除と観点の書き換えを分けて記録します。</li>
-        <li>contextualのlocal_followupでは直前アシスタント回答の語句と一意に一致するcontext anchorを検索前に解決し、resolved_queryで通常の原文検索を再実行。複数候補は確認し、候補0件は従来処理へ戻します。context_anchor_source / text / candidates / ambiguousを記録し、前回答は事実ソースにしません。</li>
+        <li>TESTQA_LOGのdiagnostics_jsonと既存の検索・取得情報にconversation_relation・compared_history_pairs・previous_question・previous_answer_overlap・overlap_mode・response_dedup_applied・response_rewrite_appliedを追加。重複箇所の削除と観点の書き換えを分けて記録します。</li>
+        <li>contextualのlocal_followupでは直前アシスタント回答の語句と一意に一致するcontext anchorを検索前に解決し、resolved_queryで通常の原文検索を再実行。複数候補は確認し、候補0件は従来処理へ戻します。anchor一致原文→同conversationの前後seq（±1）の順に証拠を優先し、離れた意味類似の話題を回答根拠から除外。一致箇所の引用も検証します。context_anchor_source / text / candidates / ambiguous、anchor_evidence_term / match_refs / context_radius / evidence_messages / excluded_messagesを記録し、前回答は事実ソースにしません。</li>
         <li>自己参照は認証済みユーザー・セッション情報を優先し、TESTセッションのサーバー側プロフィールで補完。original_query / resolved_subject / rewrite_queryで検索前の解決を確認できます。</li>
-        <li>原文0件・空evidence・原文取得エラーでは回答生成を止め、answer_mode=clarificationで短い確認だけを返します。取得失敗と意図・主語の曖昧さをclarification_needed / clarification_reason / clarification_questionで区別します。原文がある回答も引用箇所を検証し、推測による補完を抑えます。</li>
+        <li>原文取得失敗はanswer_mode=evidence_errorとevidence_fetch_errorで記録し、短い取得エラーを返して回答生成を止めます。原文0件はno_evidence、意図・主語の曖昧さはclarificationとして分離。原文取得済みの情報不足では、未指定の日時・人物・話題1点で探せる場合だけ確認します。原文引用を検証し、推測による補完を抑えます。</li>
         <li>TESTの長押し本文コピー、返答詳細、一括コピーを併用できるようにしました。ADMINは緑色を維持し、本番サイトへの反映は行っていません。</li>
       </ul>
     </section>
