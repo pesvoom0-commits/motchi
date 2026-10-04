@@ -66,7 +66,7 @@ async function retrieveTestAnchorFirst(env,plan,sourceAi,anchor){
   return result;
 }
 function normalizeTestAnchorQuery(question,anchor,scopes){
-  const term=anchor.match(/[「『]([^」』]{2,80})[」』]/)?.[1]||question.match(/^(.{2,40}?)(?:って|とは|について|の話)/)?.[1]||anchor;
+  const term=question.match(/^(.{2,40}?)(?:って|とは|について|の話)/)?.[1]?.replace(/^[「『]|[」』]$/g,'')||anchor.match(/[「『]([^「『」』]{2,80})[」』]/)?.[1]||anchor;
   const pieces=[...new Set(scopes.filter(Boolean))].filter((x,i,a)=>!a.some((y,j)=>j!==i&&y.length>x.length&&y.includes(x)));
   const context=pieces.join('、');
   const tail=question.replace(/^.{2,40}?(?:って|とは|について|の話)[、,\s]*/, '');
