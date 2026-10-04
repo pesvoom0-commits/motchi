@@ -23,12 +23,14 @@ fail='getTestV2Evidence';r=await ask('洋輔さんは何を大切にしてる？
 empty=true;r=await ask('最近何話してた？');assert.equal(r.retrievalDiagnostics.answer_mode,'no_evidence');assert(!calls.some(x=>x.action==='/responses'));empty=false;
 fail='getTestTemporalMessages';r=await ask('最近何話してた？');assert.equal(r.retrievalDiagnostics.answer_mode,'evidence_error');assert(r.retrievalDiagnostics.diagnostics_json.evidence_fetch_error);fail='';
 fail='getTestWhatsappEvidence';r=await ask('昨日、美砂と実際に何話してた？');assert.equal(r.retrievalDiagnostics.answer_mode,'evidence_error');assert(r.retrievalDiagnostics.diagnostics_json.evidence_fetch_error);assert.equal(r.retrievalDiagnostics.retrieval_mode,'whatsapp_text_scan');fail='';
-r=await ask('美砂についてどう考えてる？');assert.equal(r.answer,'洋輔さんから見た美砂さんのこと？');assert.equal(r.retrievalDiagnostics.diagnostics_json.clarification_reason,'ambiguous_intent');assert(!calls.some(x=>x.action==='/responses'));
+r=await ask('美砂についてどう考えてる？');assert.equal(r.answer,'洋輔さんから見たあなたのこと？');assert.equal(r.retrievalDiagnostics.diagnostics_json.clarification_reason,'ambiguous_intent');assert(!calls.some(x=>x.action==='/responses'));
 r=await ask('うん',[{role:'user',text:'美砂についてどう考えてる？'},{role:'assistant',text:'洋輔さんから見た美砂さんのこと？'}]);assert(r.retrievalDiagnostics.rewrite_query.includes('洋輔さん本人'));assert.equal(r.retrievalDiagnostics.diagnostics_json.clarification_needed,false);
 let d=run('acceptGroundedTestAnswer(testArgs, "美砂の言葉が好きだ。")',{output_text:'根拠のない長い人物解釈'});assert.equal(d.diagnostics.clarification_needed,false);assert.equal(d.diagnostics.answer_mode,'insufficient_evidence');
 const history=[{role:'user',text:'今月の話は？'},{role:'assistant',text:'月の相談'}, {role:'user',text:'最近の美砂の話は？'},{role:'assistant',text:'人物について'}, {role:'user',text:'ものづくりは？'},{role:'assistant',text:'作る話'}];
 const draft='現在の原文から確認した重複説明を長く書いた。';let edit;
 c.openaiJson=async()=>({output_text:JSON.stringify(edit)});
+// Policy tests exercise the comparator after admission; admission has its own suite.
+c.testDedupPrecheck=()=>({dedup_comparison_skipped:false});
 async function compare(question){return await run('compareAndReduceTestAnswer({},testArgs)',{question,answer:draft,evidence:'今回の根拠原文',conversation:history,model:'test',route:'ai_person',plan:{}});}
 edit={relation:'same_answer',pair_relations:['same_answer','new_topic','new_topic'],compared_pair_index:0,previous_answer_overlap:'yes',overlap_mode:'full',response_dedup_applied:true,removed_duplicate_spans:[draft],answer:'さっきと同じだよ。'};
 d=await compare('今月の話は？');assert.equal(d.answer,draft);assert(d.diagnostics.response_dedup_error); // Old semantic match cannot suppress independent query.
