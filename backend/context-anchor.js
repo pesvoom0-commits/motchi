@@ -47,13 +47,15 @@ function resolveTestContextAnchor(question,conversation=[]){
   const scopes=[time?.[0],priorTopic?.[1],sourceNames.length===1?sourceNames[0]:null].filter(Boolean);
   const scope=scopes.length?scopes.join('・')+'の会話で挙げられた':'';
   result.query=`${scope}「${anchor}」について、${question}`;
-  Object.assign(d,{context_anchor_found:true,context_anchor_source:'previous_assistant',context_anchor_text:anchor,resolved_query:result.query});
+  const literalTerm=named?named[1].replace(/^[「『]|[」』]$/g,'').trim():anchor.match(/[「『]([^」』]{2,80})[」』]/)?.[1]||anchor;
+  Object.assign(d,{context_anchor_found:true,context_anchor_source:'previous_assistant',context_anchor_text:anchor,context_anchor_term:literalTerm,resolved_query:result.query});
   return result;
 }
 function formatTestContextAnchor(d){return [
   `contextual_mode=${d.contextual_mode}`,`context_strategy=${d.context_strategy}`,
   `context_anchor_found=${d.context_anchor_found?'yes':'no'}`,`context_anchor_source=${d.context_anchor_source}`,
   `context_anchor_text=${d.context_anchor_text||'none'}`,`context_anchor_candidates=${JSON.stringify(d.context_anchor_candidates)}`,
+  `anchor_evidence_term=${d.anchor_evidence_term||'none'}`,`anchor_match_refs=${JSON.stringify(d.anchor_match_refs||[])}`,`anchor_context_radius=${d.anchor_context_radius??'none'}`,`anchor_evidence_messages=${d.anchor_evidence_messages??0}`,`anchor_excluded_messages=${d.anchor_excluded_messages??0}`,
   `context_anchor_ambiguous=${d.context_anchor_ambiguous?'yes':'no'}`,`resolved_query=${d.resolved_query}`
 ].join('\n');}
 async function ambiguousTestContextReply({env,cors,q,prep,model,queryInfo,anchor}){
