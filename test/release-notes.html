@@ -49,68 +49,35 @@
     <a class="back" href="./">もっちをのぞくに戻る</a>
     <h1>リリースノート</h1>
     <p class="release-policy">リリースごとに、使い勝手の変更が分かるユーザー向けの内容と、実装・検証のためのDEV情報をまとめています。</p>
-    <!-- Release notes summarize final changes per release with user and DEV sections.
-         Preserve historical entries through 2.2.012. -->
-    <section class="release-block" data-version="2.2.013">
-      <h2>2.2.013 TEST</h2>
+    <section class="release-block" data-version="2.2">
+      <h2>2.2</h2>
       <h3>ユーザー向け</h3>
       <ul>
-        <li>「今日は何日？」「今何時？」「今日って何曜日？」などには、会話を検索せず、日本時間の日付・時刻で答えるようになりました。</li>
-        <li>「今月」「最近」「一番最近」「10月2日」など、時期を指定した質問では対象期間の会話を確認して答えるようになりました。</li>
-        <li>「最近、美砂について何か話してた？」のように、時期と話題を組み合わせた質問にも対応しました。</li>
-        <li>美砂さんとの実際の会話を聞く質問では、WhatsAppの会話記録を確認して答えるようになりました。</li>
-        <li>「ワイ」「私」「僕」「俺」「うち」など自分を指す質問は、利用者の情報に合わせて検索するようになりました。</li>
-        <li>質問の意味が曖昧な場合は必要な対象だけ短く確認します。記録の取得に失敗した場合は、確認できないことを短く伝え、推測で補わないようになりました。</li>
-        <li>直前の返答に出た話題を具体的に聞き直すとき、対象を特定し、その話題と前後の会話記録を優先して確認するようになりました。候補が複数ある場合は短く確認します。</li>
-        <li>続けて同じ内容やその一部を聞いたとき、説明を最初から繰り返さず、聞かれた部分や新しく分かった内容を中心に答えるようになりました。</li>
-        <li>返答本文のコピーと、返答詳細の検索情報・質問をまとめたコピーを使い分けられるようになりました。</li>
-        <li>必要な会話記録と回答比較に処理を絞り、返答の待ち時間を減らしました。</li>
-        <li>あなた自身について答えるときは、原則「あなた」と呼ぶようになりました。原文引用や記録上の名前は保持します。</li>
-        <li>検索や記録処理の安定性を改善しました。</li>
+        <li>過去の会話を「いつ・誰と・何について話したか」から、より正確に探せるようになりました。「最近」「今月」「一番最近」などの時期指定にも対応しています。</li>
+        <li>直前の返答に出た話題を踏まえ、続きの質問でも対象の会話と前後のやり取りを確認して答えるようになりました。</li>
+        <li>同じ内容を聞き直したとき、説明を最初から繰り返しにくくなりました。追加の質問には、聞かれた部分や新しく分かった内容を中心に答えます。</li>
+        <li>「私」「ワイ」など、自分を指す言い方を利用者に合わせて扱えるようになりました。質問者本人への呼称は原則「あなた」とし、引用や記録上の名前は保持します。</li>
+        <li>分からないことを推測で埋めず、必要なことだけ短く聞き返すようになりました。記録を取得できない場合も、確認できないことを短く伝えます。</li>
+        <li>現在の日付・時刻・曜日を聞く質問には、日本時間で答えるようになりました。</li>
+        <li>実際に交わした会話を聞く質問では、WhatsAppの会話記録を確認して答えるようになりました。</li>
+        <li>回答処理の無駄を減らし、一部の検索や続きの質問で待ち時間を短縮しました。</li>
+        <li>入力中に改行でき、長い文章も書きやすくなりました。返答本文のコピーと、返答詳細をまとめたコピーを使い分けられます。</li>
+        <li>ダークモードや、入力欄に表示される言葉の切り替えに対応しました。リリースノートも変更内容をまとめて読めるようになりました。</li>
       </ul>
-      <h3><span class="dev-label">DEV</span> 開発・検証向け</h3>
+      <h3><span class="dev-label">DEV</span></h3>
       <ul>
-        <li>現在の日付・時刻・曜日・月の質問はTESTのapp_meta / current_date_timeとしてtemporal判定より前に固定回答。Asia/Tokyoを使用し、vector・会話原文検索・回答生成モデルを呼びません。</li>
-        <li>TESTの保存・復旧参照は既存TEST endpoint/actionからTESTQA_LOGへ限定。本番QA_LOGへのフォールバックはなく、診断JSONとrequest_idを保持します。</li>
-        <li>ai_personにtemporal_exact / temporal_range / temporal_recent / temporal_latest / temporal_then_semanticを追加。CONVERSATIONSのconversation_dateで期間を絞り、対象conversationのMESSAGES原文を確認します。過去会話の今月・今週・今年は現在日を上限とします。</li>
-        <li>temporal_then_semanticは期間絞り込み後のconversation内で意味検索を実行。通常のsemantic vector検索は維持し、検索ヒットがない場合も取得済み原文を確認します。</li>
-        <li>direct_conversationではwhatsapp_text_scanでWhatsApp原文と前後文脈を一次ソースとして参照します。</li>
-        <li>TESTQA_LOGと返答詳細に検索プラン・解決期間・retrieval mode・candidate conversation IDs・原文参照・処理段階のdiagnosticsを記録。TESTQA_LOG保存確認とGoogle/GASの非JSON応答・ロック待機・一時的な通信障害の診断を改善しました。</li>
-        <li>standalone contextは回答生成モデル用conversationを0件にし、不要なUI履歴を除外。contextual / follow-upの文脈参照を維持します。</li>
-        <li>検索・原文確認・通常回答の生成後、軽量なdedup precheckで比較の必要性を判断。同一質問・期間要約・主題の重なり・明示的follow-upは比較を残し、独立質問・対象の異なるanchor詳細・app_meta・根拠エラー・確認質問・履歴なしは比較モデルをスキップ。必要な場合のみ直近最大3組のQ&amp;Aを直前から順に比較。直前が無関係の場合だけ遡り、独立した新質問は古いペアとの意味類似だけで短縮しません。same_answer / subset / superset / related_but_different / new_topicに分類し、duplicate response suppressionで重複説明を削減します。前回答は比較対象だけに使い、検索省略・前回答の事実再利用・回答キャッシュは行いません。</li>
-        <li>TESTQA_LOGのdiagnostics_jsonと既存の検索・取得情報にconversation_relation・compared_history_pairs・previous_question・previous_answer_overlap・overlap_mode・response_dedup_applied・response_rewrite_appliedを追加。重複箇所の削除と観点の書き換えを分けて記録します。</li>
-        <li>contextualのlocal_followupでは直前アシスタント回答の語句と一意に一致するcontext anchorを検索前に解決し、resolved_queryで通常の原文検索を再実行。複数候補は確認し、候補0件は従来処理へ戻します。anchor一致原文→同conversationの前後seq（±1）の順に証拠を優先し、離れた意味類似の話題を回答根拠から除外。長い原文内も一致箇所の前2・後1発言へ絞り、一致箇所の引用を検証します。anchor確定後の回答生成にはUI会話履歴を渡しません。context_anchor_source / text / candidates / ambiguous、anchor_evidence_term / match_refs / context_radius / evidence_messages / excluded_messagesを記録し、前回答は事実ソースにしません。</li>
-        <li>一意なcontext anchorではTEST専用getTestAnchorEvidenceで期間・conversation候補を絞り、native literal searchで一致行を特定してseq ±1の原文だけ取得。長い原文は一致発言の前2・後1発言へ絞ります。一致なしは通常のsemantic / temporal_then_semanticへ戻します。anchor_retrieval_strategy / anchor_metadata_rows_scanned / anchor_original_rows_fetchedでメタデータ走査と原文取得を区別。resolved_queryは期間・人物・話題・anchor語句の重複追加を避けます。</li>
-        <li>本人同定と最終回答の表示を分離。認証済みviewer_identityに対応する名前は引用・記録上の話者名・名前そのものの説明・同名人物の区別を保護し、回答本文の本人参照を「あなた」へ変換。viewer_reference_mode / viewer_name_rewrite_applied、dedup_precheck / dedup_comparison_skipped / dedup_skip_reason / response_dedup_msをTEST診断へ記録します。</li>
-        <li>自己参照は認証済みユーザー・セッション情報を優先し、TESTセッションのサーバー側プロフィールで補完。original_query / resolved_subject / rewrite_queryで検索前の解決を確認できます。</li>
-        <li>原文取得失敗はanswer_mode=evidence_errorとevidence_fetch_errorで記録し、短い取得エラーを返して回答生成を止めます。原文0件はno_evidence、意図・主語の曖昧さはclarificationとして分離。原文取得済みの情報不足では、未指定の日時・人物・話題1点で探せる場合だけ確認します。原文引用を検証し、推測による補完を抑えます。</li>
-        <li>TESTの長押し本文コピー、返答詳細、一括コピーを併用できるようにしました。ADMINは緑色を維持し、本番サイトへの反映は行っていません。</li>
-      </ul>
-    </section>
-
-    <section class="release-block">
-      <h2>v2.2</h2>
-      <ul>
-        <li data-audience="user" data-build="2.2.012">チャット入力中に改行でき、送信ボタンを押したときだけ送信できるようになりました</li>
-        <li data-audience="development" data-build="2.2.012"><span class="dev-label">dev</span>入力欄が文章に合わせて広がり、複数行のメッセージを書きやすくなりました</li>
-        <li data-audience="development" data-build="2.2.011"><span class="dev-label">dev</span>類似質問への返答・質問履歴参照の試行（2.2.006〜2.2.010）を取り消し、試行開始前の返答を使えるようになりました。会話履歴と、それ以前の表示調整はそのままです。</li>
-        <li data-audience="development" data-build="2.2.010"><span class="dev-label">dev</span>同じ質問から話題を変えるとき、洋輔さんの別の面を知る質問につながるようになりました。無関係な雑談や、同じ質問の提案が続きにくくなりました。</li>
-        <li data-audience="development" data-build="2.2.009"><span class="dev-label">dev</span>以前に聞いた質問を認識しやすくなりました。同じ説明を繰り返したり会話を打ち切ったりせず、追加で答えられることがないときは別の話題へ自然につながる返答を試せるようになりました。</li>
-        <li data-audience="development" data-build="2.2.008"><span class="dev-label">dev</span>同じ話を聞き直したとき、説明を最初から言い換えるのではなく、すでに話したことを踏まえて短く応じる返答を試せるようになりました。直前の会話を発言順に引き継ぎ、同じ出だしや出どころの説明を繰り返しにくくなりました。</li>
-        <li data-audience="development" data-build="2.2.007"><span class="dev-label">dev</span>同じ質問や言い換えた質問では、長い説明を繰り返さず、要点と次に確かめたいことを短く話せるようになりました。直前の会話からも再質問を判定し、追加の説明を求めた場合と分けて返答するようになりました。</li>
-        <li data-audience="development" data-build="2.2.006"><span class="dev-label">dev</span>過去に近い質問をしたことを踏まえ、同じ説明を繰り返さず自然に話を続ける返答をテストできるようになりました。</li>
-        <li data-audience="development" data-build="2.2.006"><span class="dev-label">dev</span>過去の質問だけを最大3件参照し、返答詳細で類似質問の件数・検索時間・同期残数を確認できるようになりました。過去の回答は事実の根拠に使いません。ADMINから検索データの更新と最新の返答詳細を開けるようになりました。</li>
-        <li data-audience="development"><span class="dev-label">dev</span>リリースノートの折り返し行の行間を詰め、テスト版の開発ラベルを小さなグレー背景のdev表示で確認できるようになりました。ラベルは文頭に配置し、本文に対して上下中央に揃えました。</li>
-        <li data-audience="development"><span class="dev-label">dev</span>本番の吹き出し長押しメニューに管理用の「返答詳細」が表示される不具合を修正し、コピー・スクショだけを使えるようになりました。会話履歴はそのまま保持します。</li>
-        <li data-audience="development"><span class="dev-label">dev</span>プレースホルダーのランダム表示・14px表示・上下フェードを本番でも使えるようになりました。本番は5秒間隔のシークレットリリースとし、本番リリースノートへの告知は省略しています。</li>
-        <li data-audience="development" data-build="2.2.005"><span class="dev-label">dev</span>プレースホルダーが少し小さくなり、下からふわっと現れて上へ消えるようになりました。</li>
-        <li data-audience="development" data-build="2.2.005"><span class="dev-label">dev</span>同じバージョンの変更を新しい順にまとめ、開発ラベルを項目の末尾で確認できるようになりました。</li>
-        <li data-audience="development" data-build="2.2.004"><span class="dev-label">dev</span>検索欄と入力欄で、それぞれ10個の発言からランダムにプレースホルダーを表示できるようになりました（シークレット・本番告知対象外）。</li>
-        <li data-audience="development" data-build="2.2.004"><span class="dev-label">dev</span>ADMINパネルで切り替え間隔を3・5・8・12秒／停止から選んで試せるようになりました。初期値は8秒で、端末ごとに保存します。</li>
-        <li data-audience="development" data-build="2.2.004"><span class="dev-label">dev</span>入力中・フォーカス中・画面非表示中は切り替えを止め、同じ文が連続しないようになりました。</li>
-        <li data-audience="development" data-build="2.2.004"><span class="dev-label">dev</span>テスト版をリリース履歴のマスターとし、細かい更新も確認できるようになりました。</li>
-        <li>リリースノートを新しい順に見られるようになりました</li>
-        <li>ダークモードを使えるようになりました</li>
+        <li>temporal検索をconversation_dateベースで実装し、対象期間のMESSAGES原文に基づいて回答を生成します。</li>
+        <li>通常のsemantic検索と、期間で絞ってから意味検索するtemporal_then_semanticを分離しました。</li>
+        <li>WhatsApp原文はdirect_conversation専用経路で処理し、前後の文脈とともに参照します。</li>
+        <li>contextual follow-upでは直前回答を参照先の特定にだけ使い、事実確認は原文を再検索します。独立した質問には不要な会話履歴を渡しません。</li>
+        <li>一人称の自己参照を利用者情報から解決し、内部人物同定と最終回答の呼称を分離しました。引用や話者名を保持し、本人参照は「あなた」と表示します。</li>
+        <li>same_answer / subset / superset / related_but_different / new_topicの5分類で回答重複を制御し、直前Q&amp;Aを優先します。</li>
+        <li>clarification / no_evidence / evidence_errorを分離し、意図の曖昧さ・情報不足・取得失敗を区別して応答します。</li>
+        <li>一意なcontext anchorに一致する原文と必要な周辺だけを優先取得します。一致がない場合は通常検索へ戻ります。</li>
+        <li>不要な回答比較モデルの呼び出しを事前判定でスキップし、検索クエリへの期間・人物・話題の重複追加を抑えました。</li>
+        <li>現在日時の質問はapp_metaをtemporal検索より優先し、会話検索や回答生成モデルを呼ばずに処理します。</li>
+        <li>TESTログの保存・診断参照をTESTQA_LOGへ分離し、検索・回答・取得エラーの診断をまとめて記録します。</li>
+        <li>本番回答経路と本番QA_LOGの保存先を維持し、検索・回答の変更はTEST経路に限定しています。</li>
       </ul>
     </section>
 
