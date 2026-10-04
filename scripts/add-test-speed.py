@@ -18,6 +18,7 @@ def add_test_speed(worker,gas,root):
   if(isTest && !temporalRetrieval && topLevelRoute.name==='ai_person' && temporalPlan.searchPlan!=='semantic') {""")
     change('    timing.temporal_evidence=Date.now()-temporalStarted;', '    timing.temporal_evidence+=Date.now()-temporalStarted;')
     change('    let anchorBundle=temporalRetrieval?.bundle||exactEvidence;', '    let anchorBundle=temporalRetrieval?.bundle||exactEvidence;')
+    change('今回の語句が実際に使われた箇所の意味・やり取りだけを説明し、', '原文内に埋め込まれた日時付き発言者名を各発言の話者として優先し、引用の話者を入れ替えない。wwwなどの反応も原文の話者を確認する。今回の語句が実際に使われた箇所の意味・やり取りだけを説明し、')
     change('  const promptBuildStartedAt = Date.now();', "  if(isTest && anchorFirst?.found)anchorEvidence={bundle:anchorFirst.bundle,hits:anchorFirst.hits,diagnostics:anchorFirst.diagnostics};\n  const promptBuildStartedAt = Date.now();")
     change("retrieval_mode:directEvidence?'whatsapp_text_scan':temporalRetrieval?", "retrieval_mode:anchorFirst?.found?'anchor_original_scan':directEvidence?'whatsapp_text_scan':temporalRetrieval?")
     change('message_rows_read:directEvidence?directEvidence.messageRowsRead:mergedEvidence.messages.length,', 'message_rows_read:anchorFirst?.found?anchorFirst.diagnostics.message_rows_read:directEvidence?directEvidence.messageRowsRead:mergedEvidence.messages.length,')
