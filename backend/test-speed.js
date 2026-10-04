@@ -25,7 +25,7 @@ function presentTestViewerAnswer(answer,identity,question=''){
     if(protectedParts.some(p=>index>=p.start&&index<p.end))return name;
     const left=answer.slice(0,index).split(/[。！？?\n]/).at(-1),right=answer.slice(index).split(/[。！？?\n]/)[0];
     const clause=left+right;
-    if(/発言者|話者名|記録上の名前|原文の名前|名前そのもの|という名前|という呼び名|名前の由来|名前は|名前について/.test(clause)||/^\s*(?:\[20\d{2}[^\]]*\]\s*)?$/.test(left)&&/^\S*[:：]/.test(right))return name;
+    if(/(?:その話|この話|記録では|原文では)[、\s]*みちゃこと話して/.test(clause)||/発言者|話者名|記録上の名前|原文の名前|名前そのもの|という名前|という呼び名|名前の由来|名前は|名前について/.test(clause)||/^\s*(?:\[20\d{2}[^\]]*\]\s*)?$/.test(left)&&/^\S*[:：]/.test(right))return name;
     diagnostics.viewer_name_rewrite_applied=true;return 'あなた';
   });
   return {answer:displayed,diagnostics};
@@ -48,7 +48,7 @@ function testDedupPrecheck({question,answer,evidence,conversation,route,plan,ans
   if(anchor?.context_anchor_found&&/(具体|どんな|詳しく|どういう)/.test(question)&&!explicit)return skip('anchor_details_requested');
   if(testCurrentDateTimeAnswer(last.question)||isV2AppMetaQuestion(last.question))return skip('previous_fixed_route');
   // Summary ranges can refer to the same originals; retain the existing five relations.
-  const summary=q=>/(?:何|なに|どんな).{0,6}(?:話|相談)/.test(q)&&/最近|今月|先月|今週|先週|昨日|今日|\d+月|一番最近/.test(q);
+  const summary=q=>{const p=buildTemporalSearchPlan(q,plan?.range?.to||new Date(Date.now()+9*3600000).toISOString().slice(0,10));return ['temporal_exact','temporal_range','temporal_recent','temporal_latest'].includes(p.searchPlan);};
   if(summary(question)&&summary(last.question))return {dedup_precheck:'temporal_summary_candidate',dedup_comparison_skipped:false,dedup_skip_reason:''};
   const topical=q=>String(q).replace(/美砂(?:さん)?|みちゃこ|洋輔(?:さん)?|もっちー?|あなた|私|ワイ|ちゃっぺー師匠|じぇみさん|最近|今月|先月|今日|昨日|今週|先週|一番最近|\d+月\d*日?|その話|それ以外|それ|他には|ほかには|他に|さっき|先ほど|前の|の続き|続き|もっと|について|どんな|何|なに|どう|考えて|思って|具体的に|詳しく|話してた|話した|会話|教えて|って|です|さん|[\s、。？?「」『』・]/g,'');
   const terms=q=>new Set((topical(q).match(/[\p{L}\p{N}]+/gu)||[]).flatMap(t=>t.length<2?[]:Array.from({length:t.length-1},(_,i)=>t.slice(i,i+2))));
