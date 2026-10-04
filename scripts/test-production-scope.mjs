@@ -1,0 +1,8 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const old=fs.readFileSync(process.argv[2]+'/worker.mjs','utf8'),updated=fs.readFileSync(process.argv[3]+'/worker.mjs','utf8');
+assert.equal(old.slice(0,old.indexOf('async function completeV2FixedRoute(')),updated.slice(0,updated.indexOf('async function completeV2FixedRoute(')),'production entrypoint/retrieval helpers must be exact');
+assert.equal(fs.readFileSync(process.argv[2]+'/Code.gs','utf8'),fs.readFileSync(process.argv[3]+'/Code.gs','utf8'));
+class Clock extends Date{static now(){return 1000;}}
+async function run(code,q,route){const c=vm.createContext({console,Response,URL,URLSearchParams,Date:Clock,Map,Set,Number,JSON,Intl,TextEncoder,setTimeout});vm.runInContext(code.replace('export default','const worker='),c);let logs=[];c.gas=async(_e,b)=>{logs.push(b);return {ok:true};};c.args={env:{},cors:{},q,conversation:[],prep:{requestId:'production-scope',remaining:17},model:'production',route,isTest:false};const data=JSON.parse(await(await vm.runInContext('completeV2FixedRoute(args)',c)).text());return JSON.parse(JSON.stringify({data,logs}));}
+for(const [q,name] of [['あなたは誰？','app_meta'],['今日は何日？','app_meta'],['天気は？','external_info'],['昨日実際に何話した？','direct_conversation']]){assert.deepEqual(await run(updated,q,{name,reason:'production',currentDateTimeAnswer:'TEST CLOCK MUST NOT LEAK'}),await run(old,q,{name,reason:'production',currentDateTimeAnswer:'TEST CLOCK MUST NOT LEAK'}));}
+console.log('PASS: production entrypoint/retrieval helpers byte-identical; GAS byte-identical; shared fixed routes keep original production answers, quota response, and logAnswer payload even with TEST-only override present');
