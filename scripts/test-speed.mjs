@@ -6,6 +6,7 @@ for(const [input,expected] of [
  ['9月は美砂さんと話していた。','9月はあなたと話していた。'],
  ['洋輔さんは美砂さんを大切に思っていて、みちゃこに伝えた。','洋輔さんはあなたを大切に思っていて、あなたに伝えた。'],
  ['美砂さんは「みちゃこ、好きよ」と言われた。','あなたは「みちゃこ、好きよ」と言われた。'],
+ ['その話、みちゃこと話してたよ。','その話、みちゃこと話してたよ。'],
  ['原文の発言者名は美砂さん。','原文の発言者名は美砂さん。'],
  ['「美砂」という名前について話した。','「美砂」という名前について話した。'],
  ['あきさんは洋輔さんを応援している。','あきさんは洋輔さんを応援している。'],
@@ -25,6 +26,7 @@ assert(pre('今日は何日？',hist('今日は何日？'),{route:'app_meta'}).d
 assert(pre('昨日何話した？',[]).dedup_comparison_skipped);
 assert.equal(pre('英語の発表について教えて',hist('英語の発表について教えて')).dedup_comparison_skipped,false);
 assert.equal(pre('一番最近、何話してた？',hist('今月もっちは何話してた？')).dedup_comparison_skipped,false);
+assert(pre('9月、洋輔さんが登壇したオンラインイベントで「英語が多い」というコメントについて何と話してた？',hist('最近、美砂について何か話してた？')).dedup_comparison_skipped);
 assert.equal(pre('その話の続きは？',hist('仕事について教えて')).dedup_comparison_skipped,false);
 const qa=[{role:'user',text:'9月、洋輔さんが登壇したオンラインイベントで「英語が多い」というコメントについて何と話してた？'},{role:'assistant',text:'「英語が多い」という指摘が人気の次点だった。'}];
 const normalized=run('resolveTestContextAnchor("英語が多いって具体的にどんな会話してた？",arg)',qa);assert(normalized.diagnostics.context_anchor_found);assert.equal((normalized.query.match(/9月/g)||[]).length,1);assert.equal((normalized.query.match(/英語が多い/g)||[]).length,1);assert(normalized.query.includes('オンラインイベント'));assert(normalized.query.includes('洋輔さん'));
